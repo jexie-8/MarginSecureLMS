@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'feedback',
     'published_by',
     'published_at',
+    'rubric_scores',
 ])]
 class Grade extends Model
 {
@@ -21,6 +22,7 @@ class Grade extends Model
         return [
             'score' => 'decimal:2',
             'published_at' => 'datetime',
+            'rubric_scores' => 'array',
         ];
     }
 

@@ -40,6 +40,9 @@ class AssignmentController extends Controller
             'max_score' => ['required', 'numeric', 'gt:0', 'max:999999.99'],
             'due_at' => ['nullable', 'date', 'after:now'],
             'publish' => ['sometimes', 'boolean'],
+            'rubric' => ['nullable', 'array', 'max:30'],
+            'rubric.*.name' => ['required', 'string', 'max:255'],
+            'rubric.*.points' => ['required', 'numeric', 'gt:0'],
         ]);
         $course = Course::query()->findOrFail($data['course_id']);
         $this->ensureUniversityVisible($request->user(), $course->university_id);
@@ -73,6 +76,9 @@ class AssignmentController extends Controller
             'description' => ['nullable', 'string', 'max:20000'],
             'max_score' => ['sometimes', 'numeric', 'gt:0', 'max:999999.99'],
             'due_at' => ['nullable', 'date'],
+            'rubric' => ['nullable', 'array', 'max:30'],
+            'rubric.*.name' => ['required', 'string', 'max:255'],
+            'rubric.*.points' => ['required', 'numeric', 'gt:0'],
         ]);
         $assignment->update($data);
         $audit->record($request->user(), 'assignment.updated', $assignment, ['changed' => array_keys($data)], $request);

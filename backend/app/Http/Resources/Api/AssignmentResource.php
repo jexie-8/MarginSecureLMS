@@ -23,6 +23,7 @@ class AssignmentResource extends JsonResource
             'max_score' => $this->max_score,
             'due_at' => $this->due_at,
             'published_at' => $this->published_at,
+            'rubric' => $this->rubric,
             'course' => new CourseResource($this->whenLoaded('course')),
         ];
     }

@@ -22,6 +22,7 @@ class GradeResource extends JsonResource
             'feedback' => $this->feedback,
             'published_by' => $this->published_by,
             'published_at' => $this->published_at,
+            'rubric_scores' => $this->rubric_scores,
         ];
     }
 }

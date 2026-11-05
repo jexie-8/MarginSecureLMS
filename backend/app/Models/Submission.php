@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'assignment_id',
@@ -36,5 +37,10 @@ class Submission extends Model
     public function grade(): HasOne
     {
         return $this->hasOne(Grade::class);
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(SubmissionFile::class);
     }
 }

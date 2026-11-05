@@ -22,6 +22,8 @@ class UserResource extends JsonResource
             'account_status' => $this->when($request->user()?->can('viewStatus', $this->resource), $this->account_status),
             'university_id' => $this->university_id,
             'department_id' => $this->department_id,
+            'avatar_url' => $this->avatar_path ? url('/api/v1/profile/avatar/'.$this->id) : null,
+            'mfa_enabled' => $this->mfa_confirmed_at !== null,
             'last_login_at' => $this->when($request->user()?->can('viewStatus', $this->resource), $this->last_login_at),
         ];
     }

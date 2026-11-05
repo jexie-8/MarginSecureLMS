@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'max_score',
     'due_at',
     'published_at',
+    'rubric',
 ])]
 class Assignment extends Model
 {
@@ -24,6 +25,7 @@ class Assignment extends Model
             'max_score' => 'decimal:2',
             'due_at' => 'datetime',
             'published_at' => 'datetime',
+            'rubric' => 'array',
         ];
     }
 

@@ -51,6 +51,15 @@ class AuthController extends Controller
             $this->recordFailure($key);
         }
 
+        if ($user->mfa_confirmed_at !== null && in_array($user->role, ['platform_admin', 'university_admin', 'department_admin'], true)) {
+            Auth::guard('web')->logout();
+            $request->session()->regenerate();
+            $request->session()->put('mfa_user_id', $user->id);
+            RateLimiter::clear($key);
+
+            return response()->json(['message' => 'Multi-factor authentication is required.', 'mfa_required' => true], 202);
+        }
+
         $request->session()->regenerate();
         RateLimiter::clear($key);
 
@@ -99,13 +108,17 @@ class AuthController extends Controller
      */
     private function publicUser(object $user): array
     {
-        return $user->only([
+        return [
+            ...$user->only([
             'id',
             'name',
             'email',
             'role',
             'university_id',
             'department_id',
-        ]);
+            ]),
+            'avatar_url' => $user->avatar_path ? url('/api/v1/profile/avatar/'.$user->id) : null,
+            'mfa_enabled' => $user->mfa_confirmed_at !== null,
+        ];
     }
 }

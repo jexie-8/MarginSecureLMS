@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\SubmissionController;
 use App\Http\Controllers\Api\UniversityController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\LearningToolsController;
+use App\Http\Controllers\Api\ProfileDataController;
+use App\Http\Controllers\Api\MfaController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -44,5 +47,32 @@ Route::prefix('v1')->name('margin.')->group(function (): void {
         Route::post('/grades/{grade}/publish', [GradeController::class, 'publish'])->name('grades.publish');
         Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
         Route::get('/audit-logs', [UserController::class, 'auditLogs'])->name('audit_logs.index');
+
+        Route::get('/materials', [LearningToolsController::class, 'materials'])->name('materials.index');
+        Route::post('/materials', [LearningToolsController::class, 'storeMaterial'])->name('materials.store');
+        Route::get('/materials/{material}/download', [LearningToolsController::class, 'downloadMaterial'])->name('materials.download');
+        Route::get('/submission-files/{file}/download', [LearningToolsController::class, 'submissionFile'])->name('submission_files.download');
+        Route::get('/announcements', [LearningToolsController::class, 'announcements'])->name('announcements.index');
+        Route::post('/announcements', [LearningToolsController::class, 'storeAnnouncement'])->name('announcements.store');
+        Route::get('/notifications', [LearningToolsController::class, 'notifications'])->name('notifications.index');
+        Route::post('/notifications/read-all', [LearningToolsController::class, 'readAllNotifications'])->name('notifications.read_all');
+        Route::post('/notifications/{notification}/read', [LearningToolsController::class, 'readNotification'])->name('notifications.read');
+        Route::get('/attendance', [LearningToolsController::class, 'attendance'])->name('attendance.index');
+        Route::post('/attendance/sessions', [LearningToolsController::class, 'storeAttendanceSession'])->name('attendance.sessions.store');
+        Route::put('/attendance/sessions/{session}/records', [LearningToolsController::class, 'recordAttendance'])->name('attendance.records.store');
+        Route::get('/calendar', [LearningToolsController::class, 'calendar'])->name('calendar.index');
+        Route::post('/calendar', [LearningToolsController::class, 'storeCalendarEvent'])->name('calendar.store');
+        Route::get('/search', [LearningToolsController::class, 'search'])->name('search');
+        Route::get('/courses/{course}/grade-summary', [LearningToolsController::class, 'gradeSummary'])->name('courses.grade_summary');
+        Route::get('/courses/{course}/grades.csv', [LearningToolsController::class, 'exportGrades'])->name('courses.grades_export');
+
+        Route::put('/profile', [ProfileDataController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/avatar', [ProfileDataController::class, 'uploadAvatar'])->name('profile.avatar.store');
+        Route::get('/profile/avatar/{user}', [ProfileDataController::class, 'avatar'])->name('profile.avatar.show');
+        Route::post('/imports/users', [ProfileDataController::class, 'importUsers'])->name('imports.users');
+        Route::post('/imports/enrollments', [ProfileDataController::class, 'importEnrollments'])->name('imports.enrollments');
+        Route::post('/mfa/setup', [MfaController::class, 'setup'])->name('mfa.setup');
+        Route::post('/mfa/confirm', [MfaController::class, 'confirm'])->name('mfa.confirm');
+        Route::delete('/mfa', [MfaController::class, 'disable'])->name('mfa.disable');
     });
 });

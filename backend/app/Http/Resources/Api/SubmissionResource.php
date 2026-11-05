@@ -21,6 +21,13 @@ class SubmissionResource extends JsonResource
             'attempt_number' => $this->attempt_number,
             'content' => $this->content,
             'submitted_at' => $this->submitted_at,
+            'files' => $this->whenLoaded('files', fn () => $this->files->map(fn ($file) => [
+                'id' => $file->id,
+                'name' => $file->original_name,
+                'mime_type' => $file->mime_type,
+                'size' => $file->size,
+                'download_url' => url('/api/v1/submission-files/'.$file->id.'/download'),
+            ])),
             'student' => new UserResource($this->whenLoaded('student')),
             'assignment' => new AssignmentResource($this->whenLoaded('assignment')),
             'grade' => $this->when(

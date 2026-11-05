@@ -49,11 +49,17 @@ class GradeController extends Controller
         $data = $request->validate([
             'score' => ['required', 'numeric', 'min:0'],
             'feedback' => ['nullable', 'string', 'max:20000'],
+            'rubric_scores' => ['nullable', 'array', 'max:30'],
+            'rubric_scores.*.criterion' => ['required', 'string', 'max:255'],
+            'rubric_scores.*.score' => ['required', 'numeric', 'min:0'],
         ]);
         $grade = $grades->saveGrade($request->user(), $submission, (float) $data['score'], $data['feedback'] ?? null);
+        if (array_key_exists('rubric_scores', $data)) {
+            $grade->forceFill(['rubric_scores' => $data['rubric_scores']])->save();
+        }
         $audit->record($request->user(), 'grade.saved', $grade, ['score' => $grade->score], $request);
 
-        return new GradeResource($grade);
+        return new GradeResource($grade->fresh());
     }
 
     public function show(Request $request, Grade $grade): GradeResource
