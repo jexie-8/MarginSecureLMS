@@ -12,4 +12,3 @@ Route::prefix('v1')->name('margin.auth.')->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });
-

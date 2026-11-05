@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -21,6 +21,7 @@ class Program extends Model
     {
         return $this->belongsTo(University::class);
     }
+
     public function courses(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -28,6 +29,7 @@ class Program extends Model
             'course_program'
         )->withPivot('university_id')->withTimestamps();
     }
+
     /**
      * Departments associated with this program.
      */
@@ -36,6 +38,6 @@ class Program extends Model
         return $this->belongsToMany(
             Department::class,
             'program_department'
-        )->withTimestamps();
+        )->withPivot('university_id')->withTimestamps();
     }
 }

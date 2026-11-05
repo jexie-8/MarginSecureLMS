@@ -1,12 +1,13 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -35,6 +36,32 @@ class User extends Authenticatable
         return $this->hasMany(Submission::class, 'student_id');
     }
 
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_id');
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->role === 'platform_admin';
+    }
+
+    public function isUniversityAdmin(): bool
+    {
+        return $this->role === 'university_admin';
+    }
+
+    public function isDepartmentAdmin(): bool
+    {
+        return $this->role === 'department_admin';
+    }
+
+    public function managesUniversity(int $universityId): bool
+    {
+        return $this->isPlatformAdmin()
+            || ($this->isUniversityAdmin() && $this->university_id === $universityId);
+    }
+
     public function createdAssignments(): HasMany
     {
         return $this->hasMany(Assignment::class, 'created_by');
@@ -49,6 +76,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Grade::class, 'published_by');
     }
+
     protected function casts(): array
     {
         return [
@@ -65,6 +93,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class);
     }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class, 'student_id');
@@ -74,6 +103,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(CourseStaff::class);
     }
+
     /**
      * Get the university this user belongs to.
      */

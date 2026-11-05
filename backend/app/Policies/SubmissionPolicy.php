@@ -2,11 +2,17 @@
 
 namespace App\Policies;
 
+use App\Models\Assignment;
 use App\Models\Submission;
 use App\Models\User;
 
 class SubmissionPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $user->account_status === 'active';
+    }
+
     /**
      * Determine whether a user can view a submission.
      */
@@ -47,5 +53,20 @@ class SubmissionPolicy
         // Administrators do not automatically receive
         // access to private academic records.
         return false;
+    }
+
+    public function create(User $user, Assignment $assignment): bool
+    {
+        $assignment->loadMissing('course');
+
+        return $user->role === 'student'
+            && $user->account_status === 'active'
+            && $assignment->published_at !== null
+            && ($assignment->due_at === null || now()->lessThanOrEqualTo($assignment->due_at))
+            && $user->university_id === $assignment->course->university_id
+            && $user->enrollments()
+                ->where('course_id', $assignment->course_id)
+                ->where('status', 'active')
+                ->exists();
     }
 }

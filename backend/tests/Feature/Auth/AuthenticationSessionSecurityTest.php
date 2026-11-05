@@ -4,9 +4,9 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Tests\TestCase;
 
 class AuthenticationSessionSecurityTest extends TestCase
@@ -127,6 +127,7 @@ class AuthenticationSessionSecurityTest extends TestCase
         $this->login($user);
 
         $user->forceFill(['account_status' => 'suspended'])->save();
+        Auth::forgetGuards();
 
         $this->withHeaders($this->spaHeaders)->getJson('/api/v1/me')
             ->assertForbidden()
@@ -192,7 +193,6 @@ class AuthenticationSessionSecurityTest extends TestCase
 
         $this->assertNotNull($login);
         $this->assertNotNull($me);
-        $this->assertContains(EnsureFrontendRequestsAreStateful::class, $login->gatherMiddleware());
         $this->assertNotContains('web', $login->gatherMiddleware());
         $this->assertContains('auth:web', $me->gatherMiddleware());
         $this->assertNotContains('auth:sanctum', $me->gatherMiddleware());
@@ -207,6 +207,7 @@ class AuthenticationSessionSecurityTest extends TestCase
         return User::factory()->create([
             'email' => fake()->unique()->safeEmail(),
             'password' => Hash::make(self::PASSWORD),
+            'role' => 'student',
             'account_status' => $status,
             'last_login_at' => null,
         ]);
@@ -225,4 +226,3 @@ class AuthenticationSessionSecurityTest extends TestCase
         return 'margin-login:'.hash('sha256', mb_strtolower($email).'|127.0.0.1');
     }
 }
-

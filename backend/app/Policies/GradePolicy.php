@@ -8,6 +8,11 @@ use App\Models\User;
 
 class GradePolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $user->account_status === 'active';
+    }
+
     private function isAssignedStaff(
         User $user,
         Submission $submission,

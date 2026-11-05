@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Assignment;
 use App\Models\Course;
+use App\Models\CourseStaff;
 use App\Models\Grade;
 use App\Models\Submission;
+use App\Models\University;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -22,7 +24,7 @@ class AcademicAuthorizationTest extends TestCase
     ): User {
         return User::create([
             'name' => 'Test User',
-            'email' => uniqid('user_') . '@example.test',
+            'email' => uniqid('user_').'@example.test',
             'password' => 'test-password',
             'role' => $role,
             'university_id' => $universityId,
@@ -32,7 +34,7 @@ class AcademicAuthorizationTest extends TestCase
 
     private function makeAcademicRecords(): array
     {
-        $university = \App\Models\University::create([
+        $university = University::create([
             'name' => 'Test University',
             'code' => uniqid('UNI'),
         ]);
@@ -147,7 +149,7 @@ class AcademicAuthorizationTest extends TestCase
     {
         $data = $this->makeAcademicRecords();
 
-        \App\Models\CourseStaff::create([
+        CourseStaff::create([
             'course_id' => $data['course']->id,
             'user_id' => $data['lecturer']->id,
         ]);
@@ -164,7 +166,7 @@ class AcademicAuthorizationTest extends TestCase
             $data['university']->id
         );
 
-        \App\Models\CourseStaff::create([
+        CourseStaff::create([
             'course_id' => $data['course']->id,
             'user_id' => $ta->id,
         ]);
@@ -181,7 +183,7 @@ class AcademicAuthorizationTest extends TestCase
     {
         $data = $this->makeAcademicRecords();
 
-        $otherUniversity = \App\Models\University::create([
+        $otherUniversity = University::create([
             'name' => 'Other University',
             'code' => 'OTHER',
         ]);
@@ -191,7 +193,7 @@ class AcademicAuthorizationTest extends TestCase
             $otherUniversity->id
         );
 
-        \App\Models\CourseStaff::create([
+        CourseStaff::create([
             'course_id' => $data['course']->id,
             'user_id' => $outsider->id,
         ]);
