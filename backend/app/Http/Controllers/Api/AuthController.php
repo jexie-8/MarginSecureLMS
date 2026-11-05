@@ -3,89 +3,75 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    private const MAX_ATTEMPTS = 5;
+
+    private const DECAY_SECONDS = 60;
+
+    public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $credentials = $request->validated();
+        $key = $this->throttleKey($credentials['email'], (string) $request->ip());
 
-        $key = 'margin-login|'
-            .Str::lower($credentials['email'])
-            .'|'.$request->ip();
-
-        if (RateLimiter::tooManyAttempts($key, 5)) {
+        if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
             throw ValidationException::withMessages([
                 'email' => ['Too many login attempts. Try again later.'],
             ])->status(429);
         }
 
-        if (!Auth::guard('web')->attempt($credentials)) {
-            RateLimiter::hit($key, 60);
+        // A login request always starts a new authentication state. This avoids
+        // leaving a previous user authenticated after a failed account switch.
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
-            throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
-            ]);
+        if (! Auth::guard('web')->attempt($credentials)) {
+            $this->recordFailure($key);
         }
 
         $user = Auth::guard('web')->user();
 
-        if ($user->account_status !== 'active') {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        if ($user === null || $user->account_status !== 'active') {
+            if ($user !== null) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
-            throw ValidationException::withMessages([
-                'email' => ['Invalid credentials or account unavailable.'],
-            ]);
+            $this->recordFailure($key);
         }
 
         $request->session()->regenerate();
         RateLimiter::clear($key);
 
-        $user->forceFill([
-            'last_login_at' => now(),
-        ])->save();
+        $user->forceFill(['last_login_at' => now()])->save();
 
         return response()->json([
             'message' => 'Login successful.',
-            'user' => $user->only([
-                'id',
-                'name',
-                'email',
-                'role',
-                'university_id',
-                'department_id',
-            ]),
+            'user' => $this->publicUser($user),
         ]);
     }
 
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user()->only([
-                'id',
-                'name',
-                'email',
-                'role',
-                'university_id',
-                'department_id',
-            ]),
+            'user' => $this->publicUser($request->user()),
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -93,4 +79,34 @@ class AuthController extends Controller
             'message' => 'Logged out successfully.',
         ]);
     }
+
+    private function recordFailure(string $key): never
+    {
+        RateLimiter::hit($key, self::DECAY_SECONDS);
+
+        throw ValidationException::withMessages([
+            'email' => ['Invalid credentials or account unavailable.'],
+        ]);
+    }
+
+    private function throttleKey(string $email, string $ip): string
+    {
+        return 'margin-login:'.hash('sha256', mb_strtolower($email).'|'.$ip);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function publicUser(object $user): array
+    {
+        return $user->only([
+            'id',
+            'name',
+            'email',
+            'role',
+            'university_id',
+            'department_id',
+        ]);
+    }
 }
+
