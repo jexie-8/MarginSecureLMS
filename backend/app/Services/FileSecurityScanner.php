@@ -4,6 +4,8 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
 
 class FileSecurityScanner
 {
@@ -22,18 +24,22 @@ class FileSecurityScanner
 
         $command = trim((string) config('margin.clamav_command'));
         if ($command === '') {
+            if (config('margin.file_scan_required')) {
+                throw ValidationException::withMessages(['file' => ['The security scanner is unavailable.']]);
+            }
+
             return;
         }
 
-        $process = proc_open([$command, '--no-summary', $file->getRealPath()], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-        if (! is_resource($process)) {
+        try {
+            $process = new Process([$command, '--no-summary', $file->getRealPath()]);
+            $process->setTimeout(max(1, (int) config('margin.file_scan_timeout', 30)));
+            $process->run();
+        } catch (ProcessTimedOutException) {
             throw ValidationException::withMessages(['file' => ['The security scanner is unavailable.']]);
         }
-        foreach ($pipes as $pipe) {
-            stream_get_contents($pipe);
-            fclose($pipe);
-        }
-        if (proc_close($process) !== 0) {
+
+        if (! $process->isSuccessful()) {
             throw ValidationException::withMessages(['file' => ['The file failed its security scan.']]);
         }
     }

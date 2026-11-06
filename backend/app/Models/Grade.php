@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'submission_id',
@@ -39,5 +40,10 @@ class Grade extends Model
     public function publisher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'published_by');
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(GradeRevision::class)->latest('created_at')->latest('id');
     }
 }

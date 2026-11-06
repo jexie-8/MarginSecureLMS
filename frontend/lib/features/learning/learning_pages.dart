@@ -411,7 +411,9 @@ class _LearningToolPageState extends State<LearningToolPage> {
   Future<void> _recordAttendance(Map<String, dynamic> session) async {
     final values = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => const _AttendanceRecordDialog(),
+      builder: (_) => _AttendanceRecordDialog(
+        courseId: (session['course_id'] as num).toInt(),
+      ),
     );
     if (values == null || !mounted) return;
     try {
@@ -562,12 +564,7 @@ class _DataTools extends StatefulWidget {
 }
 
 class _DataToolsState extends State<_DataTools> {
-  final courseId = TextEditingController();
-  @override
-  void dispose() {
-    courseId.dispose();
-    super.dispose();
-  }
+  int? courseId;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -596,22 +593,19 @@ class _DataToolsState extends State<_DataTools> {
                 label: const Text('Import enrollments CSV'),
               ),
               SizedBox(
-                width: 150,
-                child: TextField(
-                  controller: courseId,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Course ID'),
+                width: 360,
+                child: _CourseSelector(
+                  label: 'Course to export',
+                  onSelected: (value) => setState(() => courseId = value),
                 ),
               ),
               OutlinedButton.icon(
-                onPressed: () {
-                  final id = int.tryParse(courseId.text);
-                  if (id != null)
-                    web.window.open(
-                      '${AppConfig.apiOrigin}${AppConfig.apiPrefix}/courses/$id/grades.csv',
-                      '_blank',
-                    );
-                },
+                onPressed: courseId == null
+                    ? null
+                    : () => web.window.open(
+                        '${AppConfig.apiOrigin}${AppConfig.apiPrefix}/courses/$courseId/grades.csv',
+                        '_blank',
+                      ),
                 icon: const Icon(Icons.download_outlined),
                 label: const Text('Export grades CSV'),
               ),
@@ -634,11 +628,10 @@ class _MaterialDialog extends StatefulWidget {
 }
 
 class _MaterialDialogState extends State<_MaterialDialog> {
-  final course = TextEditingController();
+  int? courseId;
   final title = TextEditingController();
   @override
   void dispose() {
-    course.dispose();
     title.dispose();
     super.dispose();
   }
@@ -649,14 +642,13 @@ class _MaterialDialogState extends State<_MaterialDialog> {
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: course,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Course ID'),
+        _CourseSelector(
+          onSelected: (value) => setState(() => courseId = value),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: title,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(labelText: 'Title'),
         ),
       ],
@@ -667,11 +659,13 @@ class _MaterialDialogState extends State<_MaterialDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () => Navigator.pop(context, {
-          'course_id': course.text,
-          'title': title.text,
-          'published': '1',
-        }),
+        onPressed: courseId == null || title.text.trim().isEmpty
+            ? null
+            : () => Navigator.pop(context, {
+                'course_id': courseId.toString(),
+                'title': title.text.trim(),
+                'published': '1',
+              }),
         child: const Text('Continue'),
       ),
     ],
@@ -685,12 +679,11 @@ class _AnnouncementDialog extends StatefulWidget {
 }
 
 class _AnnouncementDialogState extends State<_AnnouncementDialog> {
-  final course = TextEditingController();
+  int? courseId;
   final title = TextEditingController();
   final body = TextEditingController();
   @override
   void dispose() {
-    course.dispose();
     title.dispose();
     body.dispose();
     super.dispose();
@@ -704,18 +697,19 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: course,
-            decoration: const InputDecoration(labelText: 'Course ID'),
+          _CourseSelector(
+            onSelected: (value) => setState(() => courseId = value),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: title,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(labelText: 'Title'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: body,
+            onChanged: (_) => setState(() {}),
             minLines: 4,
             maxLines: 8,
             decoration: const InputDecoration(labelText: 'Message'),
@@ -729,12 +723,17 @@ class _AnnouncementDialogState extends State<_AnnouncementDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () => Navigator.pop(context, {
-          'course_id': int.tryParse(course.text),
-          'title': title.text,
-          'body': body.text,
-          'published': true,
-        }),
+        onPressed:
+            courseId == null ||
+                title.text.trim().isEmpty ||
+                body.text.trim().isEmpty
+            ? null
+            : () => Navigator.pop(context, {
+                'course_id': courseId,
+                'title': title.text.trim(),
+                'body': body.text.trim(),
+                'published': true,
+              }),
         child: const Text('Publish'),
       ),
     ],
@@ -748,12 +747,11 @@ class _CalendarDialog extends StatefulWidget {
 }
 
 class _CalendarDialogState extends State<_CalendarDialog> {
-  final course = TextEditingController();
+  int? courseId;
   final title = TextEditingController();
   final starts = TextEditingController();
   @override
   void dispose() {
-    course.dispose();
     title.dispose();
     starts.dispose();
     super.dispose();
@@ -767,18 +765,19 @@ class _CalendarDialogState extends State<_CalendarDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: course,
-            decoration: const InputDecoration(labelText: 'Course ID'),
+          _CourseSelector(
+            onSelected: (value) => setState(() => courseId = value),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: title,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(labelText: 'Title'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: starts,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               labelText: 'Starts at',
               helperText: 'Example: 2026-11-30 10:00',
@@ -793,14 +792,19 @@ class _CalendarDialogState extends State<_CalendarDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () => Navigator.pop(context, {
-          'course_id': int.tryParse(course.text),
-          'title': title.text,
-          'starts_at':
-              DateTime.tryParse(starts.text)?.toUtc().toIso8601String() ??
-              starts.text,
-          'visibility': 'course',
-        }),
+        onPressed:
+            courseId == null ||
+                title.text.trim().isEmpty ||
+                DateTime.tryParse(starts.text) == null
+            ? null
+            : () => Navigator.pop(context, {
+                'course_id': courseId,
+                'title': title.text.trim(),
+                'starts_at': DateTime.parse(
+                  starts.text,
+                ).toUtc().toIso8601String(),
+                'visibility': 'course',
+              }),
         child: const Text('Create'),
       ),
     ],
@@ -815,12 +819,11 @@ class _AttendanceSessionDialog extends StatefulWidget {
 }
 
 class _AttendanceSessionDialogState extends State<_AttendanceSessionDialog> {
-  final course = TextEditingController();
+  int? courseId;
   final title = TextEditingController();
   final held = TextEditingController();
   @override
   void dispose() {
-    course.dispose();
     title.dispose();
     held.dispose();
     super.dispose();
@@ -832,18 +835,19 @@ class _AttendanceSessionDialogState extends State<_AttendanceSessionDialog> {
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: course,
-          decoration: const InputDecoration(labelText: 'Course ID'),
+        _CourseSelector(
+          onSelected: (value) => setState(() => courseId = value),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: title,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(labelText: 'Title'),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: held,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(labelText: 'Held at'),
         ),
       ],
@@ -854,13 +858,16 @@ class _AttendanceSessionDialogState extends State<_AttendanceSessionDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () => Navigator.pop(context, {
-          'course_id': int.tryParse(course.text),
-          'title': title.text,
-          'held_at':
-              DateTime.tryParse(held.text)?.toUtc().toIso8601String() ??
-              held.text,
-        }),
+        onPressed:
+            courseId == null ||
+                title.text.trim().isEmpty ||
+                DateTime.tryParse(held.text) == null
+            ? null
+            : () => Navigator.pop(context, {
+                'course_id': courseId,
+                'title': title.text.trim(),
+                'held_at': DateTime.parse(held.text).toUtc().toIso8601String(),
+              }),
         child: const Text('Create'),
       ),
     ],
@@ -868,20 +875,16 @@ class _AttendanceSessionDialogState extends State<_AttendanceSessionDialog> {
 }
 
 class _AttendanceRecordDialog extends StatefulWidget {
-  const _AttendanceRecordDialog();
+  const _AttendanceRecordDialog({required this.courseId});
+  final int courseId;
   @override
   State<_AttendanceRecordDialog> createState() =>
       _AttendanceRecordDialogState();
 }
 
 class _AttendanceRecordDialogState extends State<_AttendanceRecordDialog> {
-  final student = TextEditingController();
+  int? studentId;
   String status = 'present';
-  @override
-  void dispose() {
-    student.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
@@ -889,10 +892,9 @@ class _AttendanceRecordDialogState extends State<_AttendanceRecordDialog> {
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: student,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Student ID'),
+        _StudentSelector(
+          courseId: widget.courseId,
+          onSelected: (value) => setState(() => studentId = value),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
@@ -913,14 +915,165 @@ class _AttendanceRecordDialogState extends State<_AttendanceRecordDialog> {
         child: const Text('Cancel'),
       ),
       ElevatedButton(
-        onPressed: () => Navigator.pop(context, {
-          'student_id': int.tryParse(student.text),
-          'status': status,
-        }),
+        onPressed: studentId == null
+            ? null
+            : () => Navigator.pop(context, {
+                'student_id': studentId,
+                'status': status,
+              }),
         child: const Text('Save'),
       ),
     ],
   );
+}
+
+class _CourseSelector extends StatefulWidget {
+  const _CourseSelector({this.label = 'Course', required this.onSelected});
+
+  final String label;
+  final ValueChanged<int?> onSelected;
+
+  @override
+  State<_CourseSelector> createState() => _CourseSelectorState();
+}
+
+class _CourseSelectorState extends State<_CourseSelector> {
+  List<DropdownMenuEntry<int>> entries = const [];
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final payload = await context.read<ApiClient>().get(
+        '${AppConfig.apiPrefix}/courses',
+        query: {'per_page': 100},
+      );
+      entries = _rows(payload).map((course) {
+        final id = (course['id'] as num).toInt();
+        final code = course['code']?.toString().trim() ?? '';
+        final name = course['name']?.toString() ?? 'Course $id';
+        return DropdownMenuEntry(
+          value: id,
+          label: code.isEmpty ? name : '$code · $name',
+        );
+      }).toList();
+    } on AppException catch (problem) {
+      error = problem.friendlyMessage;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (error != null) {
+      return Text(
+        error!,
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      );
+    }
+    if (entries.isEmpty) {
+      return InputDecorator(
+        decoration: InputDecoration(labelText: widget.label),
+        child: const LinearProgressIndicator(),
+      );
+    }
+    return DropdownMenu<int>(
+      label: Text(widget.label),
+      enableFilter: true,
+      enableSearch: true,
+      requestFocusOnTap: true,
+      expandedInsets: EdgeInsets.zero,
+      dropdownMenuEntries: entries,
+      onSelected: widget.onSelected,
+    );
+  }
+}
+
+class _StudentSelector extends StatefulWidget {
+  const _StudentSelector({required this.courseId, required this.onSelected});
+
+  final int courseId;
+  final ValueChanged<int?> onSelected;
+
+  @override
+  State<_StudentSelector> createState() => _StudentSelectorState();
+}
+
+class _StudentSelectorState extends State<_StudentSelector> {
+  List<DropdownMenuEntry<int>> entries = const [];
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final payload = await context.read<ApiClient>().get(
+        '${AppConfig.apiPrefix}/enrollments',
+        query: {'course_id': widget.courseId, 'per_page': 100},
+      );
+      entries = _rows(payload)
+          .where((enrollment) => enrollment['status'] == 'active')
+          .map((enrollment) {
+            final student = Map<String, dynamic>.from(
+              enrollment['student'] as Map,
+            );
+            final id = (student['id'] as num).toInt();
+            final name = student['name']?.toString() ?? 'Student $id';
+            final email = student['email']?.toString() ?? '';
+            return DropdownMenuEntry(
+              value: id,
+              label: email.isEmpty ? name : '$name · $email',
+            );
+          })
+          .toList();
+    } on AppException catch (problem) {
+      error = problem.friendlyMessage;
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (error != null) {
+      return Text(
+        error!,
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      );
+    }
+    if (entries.isEmpty) {
+      return const InputDecorator(
+        decoration: InputDecoration(labelText: 'Student'),
+        child: LinearProgressIndicator(),
+      );
+    }
+    return DropdownMenu<int>(
+      label: const Text('Student'),
+      enableFilter: true,
+      enableSearch: true,
+      requestFocusOnTap: true,
+      expandedInsets: EdgeInsets.zero,
+      dropdownMenuEntries: entries,
+      onSelected: widget.onSelected,
+    );
+  }
+}
+
+List<Map<String, dynamic>> _rows(dynamic payload) {
+  final root = payload is Map ? payload['data'] : null;
+  final rows = root is Map ? root['data'] : root;
+  return (rows as List? ?? const [])
+      .whereType<Map>()
+      .map((row) => Map<String, dynamic>.from(row))
+      .toList();
 }
 
 String _label(String key) => key

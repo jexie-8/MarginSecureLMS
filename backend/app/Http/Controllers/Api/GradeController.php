@@ -8,9 +8,11 @@ use App\Models\Grade;
 use App\Models\Submission;
 use App\Services\AuditLogger;
 use App\Services\GradeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class GradeController extends Controller
 {
@@ -43,23 +45,43 @@ class GradeController extends Controller
         Submission $submission,
         GradeService $grades,
         AuditLogger $audit,
-    ): GradeResource {
+    ): JsonResponse {
         $submission->loadMissing('assignment.course');
         $this->ensureUniversityVisible($request->user(), $submission->assignment->course->university_id);
+        $existing = $submission->grade()->first();
         $data = $request->validate([
             'score' => ['required', 'numeric', 'min:0'],
             'feedback' => ['nullable', 'string', 'max:20000'],
             'rubric_scores' => ['nullable', 'array', 'max:30'],
             'rubric_scores.*.criterion' => ['required', 'string', 'max:255'],
             'rubric_scores.*.score' => ['required', 'numeric', 'min:0'],
+            'change_reason' => [
+                Rule::requiredIf($existing?->published_at !== null),
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ]);
-        $grade = $grades->saveGrade($request->user(), $submission, (float) $data['score'], $data['feedback'] ?? null);
-        if (array_key_exists('rubric_scores', $data)) {
-            $grade->forceFill(['rubric_scores' => $data['rubric_scores']])->save();
-        }
-        $audit->record($request->user(), 'grade.saved', $grade, ['score' => $grade->score], $request);
+        $grade = $grades->saveGrade(
+            $request->user(),
+            $submission,
+            (float) $data['score'],
+            $data['feedback'] ?? null,
+            $data['rubric_scores'] ?? null,
+            array_key_exists('rubric_scores', $data),
+            $data['change_reason'] ?? null,
+        );
+        $status = $grade->wasRecentlyCreated ? 201 : 200;
+        $audit->record($request->user(), 'grade.saved', $grade, [
+            'published_revision' => $existing?->published_at !== null,
+            'changed_fields' => array_values(array_filter([
+                $existing === null || (string) $existing->score !== (string) $grade->score ? 'score' : null,
+                $existing === null || $existing->feedback !== $grade->feedback ? 'feedback' : null,
+                array_key_exists('rubric_scores', $data) ? 'rubric_scores' : null,
+            ])),
+        ], $request);
 
-        return new GradeResource($grade->fresh());
+        return (new GradeResource($grade->fresh()))->response()->setStatusCode($status);
     }
 
     public function show(Request $request, Grade $grade): GradeResource
@@ -67,6 +89,9 @@ class GradeController extends Controller
         $grade->loadMissing('submission.assignment.course');
         $this->ensureUniversityVisible($request->user(), $grade->submission->assignment->course->university_id);
         Gate::authorize('view', $grade);
+        if ($request->user()->role !== 'student') {
+            $grade->load('revisions.changer:id,name');
+        }
 
         return new GradeResource($grade);
     }

@@ -44,7 +44,32 @@ void main() {
       ),
     );
     expect(find.byType(Image), findsOneWidget);
+    expect(find.bySemanticsLabel('Margin LMS logo'), findsOneWidget);
     expect(find.text('Margin'), findsOneWidget);
+  });
+
+  testWidgets('page header stacks its action without mobile overflow', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: const Scaffold(
+          body: PageHeader(
+            title: 'Course materials',
+            description: 'Private files shared with your courses.',
+            action: ElevatedButton(onPressed: null, child: Text('Upload')),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Course materials'), findsOneWidget);
+    expect(find.text('Upload'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('dark theme keeps actionable controls discoverable', (
@@ -67,5 +92,46 @@ void main() {
     expect(find.text('Continue'), findsOneWidget);
     await tester.tap(find.text('Continue'));
     expect(pressed, isTrue);
+  });
+
+  testWidgets('desktop navigation rail stays laid out on a short viewport', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 420);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Row(
+            children: [
+              ScrollableNavigationRail(
+                contentHeight: 900,
+                rail: NavigationRail(
+                  selectedIndex: 0,
+                  destinations: const [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home_outlined),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.settings_outlined),
+                      label: Text('Settings'),
+                    ),
+                  ],
+                ),
+              ),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
   });
 }

@@ -343,10 +343,14 @@ class _ResourcePageState extends State<ResourcePage> {
 
   Future<void> _grade(Map<String, dynamic> item) async {
     final api = context.read<ApiClient>();
+    final existingGrade = item['grade'];
+    final published =
+        existingGrade is Map && existingGrade['published_at'] != null;
     final score = TextEditingController(text: _nested(item['grade'], 'score'));
     final feedback = TextEditingController(
       text: _nested(item['grade'], 'feedback'),
     );
+    final reason = TextEditingController();
     final data = await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
@@ -372,6 +376,20 @@ class _ResourcePageState extends State<ResourcePage> {
                   alignLabelWithHint: true,
                 ),
               ),
+              if (published) ...[
+                const SizedBox(height: 14),
+                TextField(
+                  controller: reason,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason for changing the published grade',
+                    helperText:
+                        'Required. The previous and updated values will be retained in grade history.',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -383,17 +401,24 @@ class _ResourcePageState extends State<ResourcePage> {
           ElevatedButton(
             onPressed: () {
               final value = double.tryParse(score.text);
-              if (value != null && value >= 0)
+              if (value != null &&
+                  value >= 0 &&
+                  (!published || reason.text.trim().isNotEmpty)) {
                 Navigator.pop(context, {
                   'score': value,
                   'feedback': feedback.text.trim(),
+                  if (published) 'change_reason': reason.text.trim(),
                 });
+              }
             },
             child: const Text('Save grade'),
           ),
         ],
       ),
     );
+    score.dispose();
+    feedback.dispose();
+    reason.dispose();
     if (data == null) return;
     try {
       await api.put(

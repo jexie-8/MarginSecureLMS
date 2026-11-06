@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -466,6 +468,27 @@ void showFailure(BuildContext context, Object error) {
             child: Text(message, style: const TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+class ScrollableNavigationRail extends StatelessWidget {
+  const ScrollableNavigationRail({
+    super.key,
+    required this.rail,
+    required this.contentHeight,
+  });
+
+  final NavigationRail rail;
+  final double contentHeight;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: SizedBox(
+        height: math.max(constraints.maxHeight, contentHeight),
+        child: rail,
       ),
     ),
   );

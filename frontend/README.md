@@ -1,17 +1,28 @@
 # Margin LMS Frontend
 
-From this folder:
+Flutter Web frontend for Margin LMS.
+
+## Run
+
+Start the Laravel backend on `http://localhost:8000`, then run:
 
 ```powershell
 flutter pub get
-flutter run -d chrome --web-hostname localhost --web-port 5173 --dart-define=API_BASE_URL=http://localhost:8000
+flutter run -d edge --web-hostname localhost --web-port 5173 --no-web-resources-cdn --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
-Run Laravel using the same hostname family:
+Open `http://localhost:5173`.
+
+## Checks
 
 ```powershell
-php artisan serve --host=localhost --port=8000
+flutter analyze
+flutter test
 ```
 
+## Build
 
+```powershell
+flutter build web --release --no-web-resources-cdn --dart-define=API_BASE_URL=https://api.example.edu
+```
 

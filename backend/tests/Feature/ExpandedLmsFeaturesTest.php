@@ -28,14 +28,17 @@ class ExpandedLmsFeaturesTest extends TestCase
         $course = Course::create(['university_id' => $university->id, 'name' => 'Applied Security', 'code' => 'ASEC']);
         CourseStaff::create(['course_id' => $course->id, 'user_id' => $lecturer->id]);
         Enrollment::create(['course_id' => $course->id, 'student_id' => $student->id, 'status' => 'active']);
+
         return compact('university', 'lecturer', 'student', 'outsider', 'course');
     }
 
     public function test_course_material_is_private_and_downloadable_by_enrolled_student(): void
     {
-        Storage::fake('local'); $data = $this->records();
+        Storage::fake('local');
+        $data = $this->records();
         $response = $this->actingAs($data['lecturer'])->post('/api/v1/materials', ['course_id' => $data['course']->id, 'title' => 'Week 1', 'file' => UploadedFile::fake()->create('week1.pdf', 20, 'application/pdf')]);
-        $response->assertCreated(); $material = (int) $response->json('id');
+        $response->assertCreated();
+        $material = (int) $response->json('id');
         $this->actingAs($data['student'])->get("/api/v1/materials/{$material}/download")->assertOk();
         $this->actingAs($data['outsider'])->get("/api/v1/materials/{$material}/download")->assertNotFound();
     }
@@ -59,6 +62,7 @@ class ExpandedLmsFeaturesTest extends TestCase
         $this->actingAs($data['student'])->getJson('/api/v1/calendar')->assertJsonPath('data.0.title', 'Threat Model');
         $this->actingAs($data['student'])->getJson('/api/v1/courses/'.$data['course']->id.'/grade-summary')->assertJsonPath('data.0.percentage', 85);
         $session = $this->actingAs($data['lecturer'])->postJson('/api/v1/attendance/sessions', ['course_id' => $data['course']->id, 'title' => 'Lecture 1', 'held_at' => now()->toISOString()])->assertCreated()->json('id');
+        $this->actingAs($data['lecturer'])->putJson("/api/v1/attendance/sessions/{$session}/records", ['records' => [['student_id' => $data['outsider']->id, 'status' => 'present']]])->assertUnprocessable();
         $this->actingAs($data['lecturer'])->putJson("/api/v1/attendance/sessions/{$session}/records", ['records' => [['student_id' => $data['student']->id, 'status' => 'present']]])->assertOk();
         $this->actingAs($data['student'])->getJson('/api/v1/attendance')->assertJsonPath('data.0.records.0.status', 'present');
     }

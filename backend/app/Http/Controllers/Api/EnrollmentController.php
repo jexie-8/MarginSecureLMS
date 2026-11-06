@@ -20,6 +20,7 @@ class EnrollmentController extends Controller
         Gate::authorize('viewAny', Enrollment::class);
         $actor = $request->user();
         $query = Enrollment::query()->with(['course', 'student'])->latest('enrolled_at')->orderByDesc('id');
+        $request->whenFilled('course_id', fn (int $courseId) => $query->where('course_id', $courseId));
         if ($actor->role === 'student') {
             $query->where('student_id', $actor->id);
         } elseif (in_array($actor->role, ['lecturer', 'teaching_assistant'], true)) {

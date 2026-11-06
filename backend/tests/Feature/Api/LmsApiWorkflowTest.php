@@ -11,7 +11,7 @@ use App\Models\Grade;
 use App\Models\Submission;
 use App\Models\University;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\MarginResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -225,8 +225,8 @@ class LmsApiWorkflowTest extends TestCase
         $activeResponse->assertOk();
         $missingResponse->assertOk();
         $this->assertSame($activeResponse->json('message'), $missingResponse->json('message'));
-        Notification::assertSentTo($active, ResetPassword::class);
-        Notification::assertNotSentTo($suspended, ResetPassword::class);
+        Notification::assertSentTo($active, MarginResetPasswordNotification::class);
+        Notification::assertNotSentTo($suspended, MarginResetPasswordNotification::class);
     }
 
     /** @return array{university: University, department: Department, course: Course, lecturer: User, assistant: User, student: User} */

@@ -35,7 +35,9 @@ class DatabaseSeeder extends Seeder
         $program->departments()->syncWithoutDetaching([$department->id => ['university_id' => $university->id]]);
         $platformAdmin = $this->user('Platform Admin', 'admin@margin.test', 'platform_admin', $password);
         $universityAdmin = $this->user('University Admin', 'university-admin@margin.test', 'university_admin', $password, $university->id);
+        $departmentAdmin = $this->user('Department Admin', 'department-admin@margin.test', 'department_admin', $password, $university->id, $department->id);
         $lecturer = $this->user('Demo Lecturer', 'lecturer@margin.test', 'lecturer', $password, $university->id, $department->id);
+        $teachingAssistant = $this->user('Teaching Assistant', 'teaching-assistant@margin.test', 'teaching_assistant', $password, $university->id, $department->id);
         $student = $this->user('Demo Student', 'student@margin.test', 'student', $password, $university->id, $department->id);
 
         $courseDefinitions = [
@@ -84,6 +86,7 @@ class DatabaseSeeder extends Seeder
             );
             $course->programs()->syncWithoutDetaching([$program->id => ['university_id' => $university->id]]);
             CourseStaff::query()->firstOrCreate(['course_id' => $course->id, 'user_id' => $lecturer->id]);
+            CourseStaff::query()->firstOrCreate(['course_id' => $course->id, 'user_id' => $teachingAssistant->id]);
             Enrollment::query()->updateOrCreate(
                 ['course_id' => $course->id, 'student_id' => $student->id],
                 ['status' => 'active'],
@@ -106,6 +109,8 @@ class DatabaseSeeder extends Seeder
         $this->command?->warn('Local demo accounts use MARGIN_SEED_ADMIN_PASSWORD or the documented local-only fallback.');
         $this->command?->line("Platform administrator: {$platformAdmin->email}");
         $this->command?->line("University administrator: {$universityAdmin->email}");
+        $this->command?->line("Department administrator: {$departmentAdmin->email}");
+        $this->command?->line("Teaching assistant: {$teachingAssistant->email}");
     }
 
     private function user(

@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\SubmissionFile;
+use App\Models\User;
+use App\Notifications\AnnouncementPublishedNotification;
 use App\Services\FileSecurityScanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use App\Models\User;
-use App\Notifications\AnnouncementPublishedNotification;
-use Illuminate\Support\Facades\Notification;
 
 class LearningToolsController extends Controller
 {
@@ -84,8 +84,11 @@ class LearningToolsController extends Controller
     public function storeAnnouncement(Request $request): JsonResponse
     {
         $data = $request->validate(['course_id' => ['nullable', 'integer', 'exists:courses,id'], 'title' => ['required', 'string', 'max:255'], 'body' => ['required', 'string', 'max:30000'], 'published' => ['nullable', 'boolean']]);
-        if (isset($data['course_id'])) $this->manageCourse($request, (int) $data['course_id']);
-        else abort_unless(in_array($request->user()->role, ['platform_admin', 'university_admin'], true), 403);
+        if (isset($data['course_id'])) {
+            $this->manageCourse($request, (int) $data['course_id']);
+        } else {
+            abort_unless(in_array($request->user()->role, ['platform_admin', 'university_admin'], true), 403);
+        }
         $publishedAt = ($data['published'] ?? true) ? now() : null;
         $id = DB::transaction(function () use ($request, $data, $publishedAt): int {
             $id = DB::table('announcements')->insertGetId(['course_id' => $data['course_id'] ?? null, 'created_by' => $request->user()->id, 'title' => $data['title'], 'body' => $data['body'], 'published_at' => $publishedAt, 'created_at' => now(), 'updated_at' => now()]);
@@ -94,8 +97,11 @@ class LearningToolsController extends Controller
                     ? DB::table('enrollments')->where('course_id', $data['course_id'])->where('status', 'active')->pluck('student_id')
                     : DB::table('users')->where('account_status', 'active')->pluck('id');
                 $rows = $userIds->unique()->map(fn ($userId) => ['user_id' => $userId, 'type' => 'announcement', 'title' => $data['title'], 'message' => str($data['body'])->limit(240), 'data' => json_encode(['announcement_id' => $id]), 'created_at' => now(), 'updated_at' => now()])->all();
-                if ($rows) DB::table('lms_notifications')->insert($rows);
+                if ($rows) {
+                    DB::table('lms_notifications')->insert($rows);
+                }
             }
+
             return $id;
         });
         if ($publishedAt && config('margin.mail_notifications')) {
@@ -104,12 +110,14 @@ class LearningToolsController extends Controller
                 : DB::table('users')->where('account_status', 'active')->pluck('id');
             Notification::send(User::query()->whereKey($recipientIds)->get(), new AnnouncementPublishedNotification($data['title'], $data['body']));
         }
+
         return response()->json(['message' => 'Announcement saved.', 'id' => $id], 201);
     }
 
     public function notifications(Request $request): JsonResponse
     {
         $query = DB::table('lms_notifications')->where('user_id', $request->user()->id)->orderByDesc('created_at');
+
         return response()->json(['unread_count' => (clone $query)->whereNull('read_at')->count(), 'data' => $query->paginate($this->perPage($request))]);
     }
 
@@ -117,12 +125,14 @@ class LearningToolsController extends Controller
     {
         $changed = DB::table('lms_notifications')->where('id', $notification)->where('user_id', $request->user()->id)->update(['read_at' => now(), 'updated_at' => now()]);
         abort_unless($changed, 404);
+
         return response()->json(['message' => 'Notification marked as read.']);
     }
 
     public function readAllNotifications(Request $request): JsonResponse
     {
         DB::table('lms_notifications')->where('user_id', $request->user()->id)->whereNull('read_at')->update(['read_at' => now(), 'updated_at' => now()]);
+
         return response()->json(['message' => 'All notifications marked as read.']);
     }
 
@@ -134,6 +144,7 @@ class LearningToolsController extends Controller
         $sessions = $query->get();
         $records = DB::table('attendance_records')->whereIn('attendance_session_id', $sessions->pluck('id'))
             ->when($request->user()->role === 'student', fn ($q) => $q->where('student_id', $request->user()->id))->get()->groupBy('attendance_session_id');
+
         return response()->json(['data' => $sessions->map(fn ($session) => (array) $session + ['records' => $records->get($session->id, collect())->values()])]);
     }
 
@@ -142,15 +153,31 @@ class LearningToolsController extends Controller
         $data = $request->validate(['course_id' => ['required', 'integer', 'exists:courses,id'], 'title' => ['required', 'string', 'max:255'], 'held_at' => ['required', 'date']]);
         $this->manageCourse($request, (int) $data['course_id']);
         $id = DB::table('attendance_sessions')->insertGetId($data + ['created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now()]);
+
         return response()->json(['message' => 'Attendance session created.', 'id' => $id], 201);
     }
 
     public function recordAttendance(Request $request, int $session): JsonResponse
     {
-        $courseId = DB::table('attendance_sessions')->where('id', $session)->value('course_id'); abort_unless($courseId, 404);
+        $courseId = DB::table('attendance_sessions')->where('id', $session)->value('course_id');
+        abort_unless($courseId, 404);
         $this->manageCourse($request, (int) $courseId);
-        $data = $request->validate(['records' => ['required', 'array', 'max:500'], 'records.*.student_id' => ['required', 'integer', 'exists:users,id'], 'records.*.status' => ['required', Rule::in(['present', 'absent', 'late', 'excused'])], 'records.*.notes' => ['nullable', 'string', 'max:1000']]);
-        foreach ($data['records'] as $record) DB::table('attendance_records')->updateOrInsert(['attendance_session_id' => $session, 'student_id' => $record['student_id']], ['status' => $record['status'], 'notes' => $record['notes'] ?? null, 'created_at' => now(), 'updated_at' => now()]);
+        $data = $request->validate([
+            'records' => ['required', 'array', 'max:500'],
+            'records.*.student_id' => [
+                'required',
+                'integer',
+                Rule::exists('enrollments', 'student_id')->where(
+                    fn ($query) => $query->where('course_id', $courseId)->where('status', 'active'),
+                ),
+            ],
+            'records.*.status' => ['required', Rule::in(['present', 'absent', 'late', 'excused'])],
+            'records.*.notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+        foreach ($data['records'] as $record) {
+            DB::table('attendance_records')->updateOrInsert(['attendance_session_id' => $session, 'student_id' => $record['student_id']], ['status' => $record['status'], 'notes' => $record['notes'] ?? null, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
         return response()->json(['message' => 'Attendance saved.']);
     }
 
@@ -159,14 +186,20 @@ class LearningToolsController extends Controller
         $courseIds = $this->visibleCourseIds($request);
         $events = DB::table('calendar_events')->where(fn ($q) => $q->whereNull('course_id')->orWhereIn('course_id', $courseIds))->orderBy('starts_at')->get();
         $deadlines = DB::table('assignments')->whereIn('course_id', $courseIds)->whereNotNull('published_at')->whereNotNull('due_at')->selectRaw("id, course_id, title, description, due_at as starts_at, due_at as ends_at, 'assignment' as visibility")->get();
+
         return response()->json(['data' => $events->concat($deadlines)->sortBy('starts_at')->values()]);
     }
 
     public function storeCalendarEvent(Request $request): JsonResponse
     {
         $data = $request->validate(['course_id' => ['nullable', 'integer', 'exists:courses,id'], 'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:10000'], 'starts_at' => ['required', 'date'], 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'], 'visibility' => ['required', Rule::in(['course', 'university'])]]);
-        if (isset($data['course_id'])) $this->manageCourse($request, (int) $data['course_id']); else abort_unless(in_array($request->user()->role, ['platform_admin', 'university_admin'], true), 403);
+        if (isset($data['course_id'])) {
+            $this->manageCourse($request, (int) $data['course_id']);
+        } else {
+            abort_unless(in_array($request->user()->role, ['platform_admin', 'university_admin'], true), 403);
+        }
         $id = DB::table('calendar_events')->insertGetId($data + ['created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now()]);
+
         return response()->json(['message' => 'Calendar event created.', 'id' => $id], 201);
     }
 
@@ -175,6 +208,7 @@ class LearningToolsController extends Controller
         $term = trim((string) $request->validate(['q' => ['required', 'string', 'min:2', 'max:100']])['q']);
         $ids = $this->visibleCourseIds($request);
         $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+
         return response()->json(['data' => [
             'courses' => DB::table('courses')->whereIn('id', $ids)->where(fn ($q) => $q->where('name', 'ilike', $like)->orWhere('code', 'ilike', $like))->limit(20)->get(),
             'assignments' => DB::table('assignments')->whereIn('course_id', $ids)->where('title', 'ilike', $like)->limit(20)->get(),
@@ -191,6 +225,7 @@ class LearningToolsController extends Controller
             ->where('assignments.course_id', $course->id)->whereNotNull('grades.published_at')
             ->when($request->user()->role === 'student', fn ($q) => $q->where('submissions.student_id', $request->user()->id))
             ->select('submissions.student_id', DB::raw('SUM(grades.score) as earned'), DB::raw('SUM(assignments.max_score) as possible'))->groupBy('submissions.student_id')->get();
+
         return response()->json(['data' => $rows->map(fn ($row) => (array) $row + ['percentage' => (float) $row->possible > 0 ? round(((float) $row->earned / (float) $row->possible) * 100, 2) : 0])]);
     }
 
@@ -199,25 +234,67 @@ class LearningToolsController extends Controller
         $this->manageCourse($request, $course->id);
         $rows = DB::table('grades')->join('submissions', 'submissions.id', '=', 'grades.submission_id')->join('assignments', 'assignments.id', '=', 'submissions.assignment_id')->join('users', 'users.id', '=', 'submissions.student_id')
             ->where('assignments.course_id', $course->id)->select('users.name', 'users.email', 'assignments.title', 'grades.score', 'assignments.max_score', 'grades.published_at')->get();
-        return response()->streamDownload(function () use ($rows): void { $out = fopen('php://output', 'w'); fputcsv($out, ['Student', 'Email', 'Assignment', 'Score', 'Maximum', 'Published']); foreach ($rows as $row) fputcsv($out, (array) $row); fclose($out); }, $course->code.'-grades.csv', ['Content-Type' => 'text/csv']);
+
+        return response()->streamDownload(function () use ($rows): void {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Student', 'Email', 'Assignment', 'Score', 'Maximum', 'Published']);
+            foreach ($rows as $row) {
+                fputcsv($out, array_map($this->csvCell(...), (array) $row));
+            } fclose($out);
+        }, $course->code.'-grades.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    private function csvCell(mixed $value): mixed
+    {
+        if (is_string($value) && preg_match('/^[=+\-@]/', ltrim($value))) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 
     private function visibleCourseIds(Request $request): array
     {
-        $user = $request->user(); $query = DB::table('courses');
-        if (! $user->isPlatformAdmin()) $query->where('university_id', $user->university_id);
-        if ($user->role === 'student') $query->whereIn('id', DB::table('enrollments')->where('student_id', $user->id)->where('status', 'active')->select('course_id'));
-        elseif (in_array($user->role, ['lecturer', 'teaching_assistant'], true)) $query->whereIn('id', DB::table('course_staff')->where('user_id', $user->id)->select('course_id'));
+        $user = $request->user();
+        $query = DB::table('courses');
+        if (! $user->isPlatformAdmin()) {
+            $query->where('university_id', $user->university_id);
+        }
+        if ($user->role === 'student') {
+            $query->whereIn('id', DB::table('enrollments')->where('student_id', $user->id)->where('status', 'active')->select('course_id'));
+        } elseif (in_array($user->role, ['lecturer', 'teaching_assistant'], true)) {
+            $query->whereIn('id', DB::table('course_staff')->where('user_id', $user->id)->select('course_id'));
+        }
+
         return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 
-    private function scopeCourses(Request $request, $query, string $column): void { $query->whereIn($column, $this->visibleCourseIds($request)); }
-    private function viewCourse(Request $request, int $courseId): void { abort_unless(in_array($courseId, $this->visibleCourseIds($request), true), 404); }
-    private function manageCourse(Request $request, int $courseId): void { abort_unless($this->canManage($request, $courseId), 403); }
+    private function scopeCourses(Request $request, $query, string $column): void
+    {
+        $query->whereIn($column, $this->visibleCourseIds($request));
+    }
+
+    private function viewCourse(Request $request, int $courseId): void
+    {
+        abort_unless(in_array($courseId, $this->visibleCourseIds($request), true), 404);
+    }
+
+    private function manageCourse(Request $request, int $courseId): void
+    {
+        abort_unless($this->canManage($request, $courseId), 403);
+    }
+
     private function canManage(Request $request, int $courseId): bool
     {
-        $user = $request->user(); $course = DB::table('courses')->where('id', $courseId)->first(); if (! $course) return false;
-        if ($user->isPlatformAdmin() || $user->managesUniversity((int) $course->university_id)) return true;
+        $user = $request->user();
+        $course = DB::table('courses')->where('id', $courseId)->first();
+        if (! $course) {
+            return false;
+        }
+        if ($user->isPlatformAdmin() || $user->managesUniversity((int) $course->university_id)) {
+            return true;
+        }
+
         return in_array($user->role, ['lecturer', 'teaching_assistant'], true) && DB::table('course_staff')->where('course_id', $courseId)->where('user_id', $user->id)->exists();
     }
 }

@@ -11,14 +11,14 @@ class AuditLogger
 {
     /** @param array<string, mixed> $metadata */
     public function record(
-        User $actor,
+        ?User $actor,
         string $event,
         ?Model $auditable,
         array $metadata,
         Request $request,
     ): AuditLog {
         return AuditLog::query()->create([
-            'actor_id' => $actor->id,
+            'actor_id' => $actor?->id,
             'event' => $event,
             'auditable_type' => $auditable?->getMorphClass(),
             'auditable_id' => $auditable?->getKey(),

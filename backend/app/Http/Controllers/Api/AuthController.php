@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,12 +18,15 @@ class AuthController extends Controller
 
     private const DECAY_SECONDS = 60;
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, AuditLogger $audit): JsonResponse
     {
         $credentials = $request->validated();
         $key = $this->throttleKey($credentials['email'], (string) $request->ip());
 
         if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
+            $audit->record(null, 'auth.login_rate_limited', null, [
+                'identifier_hash' => $this->identifierHash($credentials['email']),
+            ], $request);
             throw ValidationException::withMessages([
                 'email' => ['Too many login attempts. Try again later.'],
             ])->status(429);
@@ -36,7 +41,7 @@ class AuthController extends Controller
         }
 
         if (! Auth::guard('web')->attempt($credentials)) {
-            $this->recordFailure($key);
+            $this->recordFailure($request, $audit, $key, null, 'invalid_credentials');
         }
 
         $user = Auth::guard('web')->user();
@@ -48,7 +53,7 @@ class AuthController extends Controller
                 $request->session()->regenerateToken();
             }
 
-            $this->recordFailure($key);
+            $this->recordFailure($request, $audit, $key, $user, 'account_unavailable');
         }
 
         if ($user->mfa_confirmed_at !== null && in_array($user->role, ['platform_admin', 'university_admin', 'department_admin'], true)) {
@@ -56,6 +61,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $request->session()->put('mfa_user_id', $user->id);
             RateLimiter::clear($key);
+            $audit->record($user, 'auth.mfa_required', $user, [], $request);
 
             return response()->json(['message' => 'Multi-factor authentication is required.', 'mfa_required' => true], 202);
         }
@@ -64,6 +70,7 @@ class AuthController extends Controller
         RateLimiter::clear($key);
 
         $user->forceFill(['last_login_at' => now()])->save();
+        $audit->record($user, 'auth.login_succeeded', $user, [], $request);
 
         return response()->json([
             'message' => 'Login successful.',
@@ -78,8 +85,9 @@ class AuthController extends Controller
         ]);
     }
 
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request, AuditLogger $audit): JsonResponse
     {
+        $audit->record($request->user(), 'auth.logout', $request->user(), [], $request);
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -89,9 +97,18 @@ class AuthController extends Controller
         ]);
     }
 
-    private function recordFailure(string $key): never
-    {
+    private function recordFailure(
+        Request $request,
+        AuditLogger $audit,
+        string $key,
+        ?User $user,
+        string $reason,
+    ): never {
         RateLimiter::hit($key, self::DECAY_SECONDS);
+        $audit->record($user, 'auth.login_failed', $user, [
+            'identifier_hash' => $this->identifierHash((string) $request->input('email')),
+            'reason' => $reason,
+        ], $request);
 
         throw ValidationException::withMessages([
             'email' => ['Invalid credentials or account unavailable.'],
@@ -103,6 +120,11 @@ class AuthController extends Controller
         return 'margin-login:'.hash('sha256', mb_strtolower($email).'|'.$ip);
     }
 
+    private function identifierHash(string $email): string
+    {
+        return hash_hmac('sha256', mb_strtolower(trim($email)), (string) config('app.key'));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -110,12 +132,12 @@ class AuthController extends Controller
     {
         return [
             ...$user->only([
-            'id',
-            'name',
-            'email',
-            'role',
-            'university_id',
-            'department_id',
+                'id',
+                'name',
+                'email',
+                'role',
+                'university_id',
+                'department_id',
             ]),
             'avatar_url' => $user->avatar_path ? url('/api/v1/profile/avatar/'.$user->id) : null,
             'mfa_enabled' => $user->mfa_confirmed_at !== null,

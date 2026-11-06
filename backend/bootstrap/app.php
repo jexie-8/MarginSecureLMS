@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\AuditAuthorizationFailures;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +16,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TRUSTED_PROXIES', '')),
+        )));
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
+
         $middleware->statefulApi();
+        $middleware->appendToGroup('api', [
+            SecurityHeaders::class,
+            AuditAuthorizationFailures::class,
+        ]);
         $middleware->alias([
             'account.active' => EnsureAccountIsActive::class,
         ]);

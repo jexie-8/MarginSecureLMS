@@ -6,15 +6,16 @@ use App\Http\Controllers\Api\CourseStaffController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\GradeController;
+use App\Http\Controllers\Api\LearningToolsController;
+use App\Http\Controllers\Api\MfaController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfileDataController;
 use App\Http\Controllers\Api\ProgramController;
+use App\Http\Controllers\Api\SessionManagementController;
 use App\Http\Controllers\Api\SubmissionController;
 use App\Http\Controllers\Api\UniversityController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\LearningToolsController;
-use App\Http\Controllers\Api\ProfileDataController;
-use App\Http\Controllers\Api\MfaController;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,8 @@ Route::prefix('v1')->name('margin.')->group(function (): void {
         Route::put('/submissions/{submission}/grade', [GradeController::class, 'store'])->name('grades.store');
         Route::post('/grades/{grade}/publish', [GradeController::class, 'publish'])->name('grades.publish');
         Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
+        Route::get('/sessions', [SessionManagementController::class, 'index'])->name('sessions.index');
+        Route::delete('/sessions/{session}', [SessionManagementController::class, 'destroy'])->name('sessions.destroy');
         Route::get('/audit-logs', [UserController::class, 'auditLogs'])->name('audit_logs.index');
 
         Route::get('/materials', [LearningToolsController::class, 'materials'])->name('materials.index');

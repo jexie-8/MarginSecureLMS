@@ -168,8 +168,9 @@ class _AppShellState extends State<AppShell> {
     return Scaffold(
       body: Row(
         children: [
-          SingleChildScrollView(
-            child: NavigationRail(
+          ScrollableNavigationRail(
+            contentHeight: 118 + (destinations.length * 56),
+            rail: NavigationRail(
               extended: extended,
               minWidth: 100,
               minExtendedWidth: 248,

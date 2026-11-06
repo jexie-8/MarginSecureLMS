@@ -26,7 +26,6 @@ Future<void> main() async {
   final session = SessionController(api, cache);
   final theme = ThemeController(preferences);
   runApp(MarginApp(session: session, theme: theme, cache: cache, api: api));
-  unawaited(session.bootstrap());
 }
 
 class MarginApp extends StatefulWidget {
@@ -54,8 +53,12 @@ class _MarginAppState extends State<MarginApp> {
     redirect: (context, state) {
       final status = widget.session.state;
       final location = state.matchedLocation;
-      if (status == SessionState.booting) return '/splash';
-      if (status == SessionState.startupError) return '/startup-error';
+      if (status == SessionState.booting) {
+        return location == '/splash' ? null : '/splash';
+      }
+      if (status == SessionState.startupError) {
+        return location == '/startup-error' ? null : '/startup-error';
+      }
       final isPublic =
           location == '/login' ||
           location == '/forgot-password' ||
@@ -102,6 +105,12 @@ class _MarginAppState extends State<MarginApp> {
       ),
     ],
   );
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleMicrotask(() => widget.session.bootstrap());
+  }
 
   @override
   Widget build(BuildContext context) {
