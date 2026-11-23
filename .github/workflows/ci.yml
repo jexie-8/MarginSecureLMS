@@ -60,6 +60,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned to the version used for development so analysis results are
+          # reproducible. Raise it deliberately when upgrading Flutter locally.
+          flutter-version: "3.44.7"
           channel: stable
       - run: flutter pub get
       - run: flutter analyze
