@@ -8,13 +8,12 @@ use App\Models\SubmissionFile;
 use App\Models\User;
 use App\Notifications\AnnouncementPublishedNotification;
 use App\Services\FileSecurityScanner;
+use App\Services\PrivateFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LearningToolsController extends Controller
@@ -29,7 +28,7 @@ class LearningToolsController extends Controller
         return response()->json(['data' => $query->paginate($this->perPage($request))]);
     }
 
-    public function storeMaterial(Request $request, FileSecurityScanner $scanner): JsonResponse
+    public function storeMaterial(Request $request, FileSecurityScanner $scanner, PrivateFiles $files): JsonResponse
     {
         $data = $request->validate([
             'course_id' => ['required', 'integer', 'exists:courses,id'], 'title' => ['required', 'string', 'max:255'],
@@ -39,7 +38,7 @@ class LearningToolsController extends Controller
         $this->manageCourse($request, (int) $data['course_id']);
         $scanner->validate($request->file('file'));
         $file = $request->file('file');
-        $path = $file->store('materials/'.((int) $data['course_id']), 'local');
+        $path = $files->store($file, 'materials/'.((int) $data['course_id']));
         $id = DB::table('course_materials')->insertGetId([
             'course_id' => $data['course_id'], 'uploaded_by' => $request->user()->id,
             'title' => $data['title'], 'description' => $data['description'] ?? null, 'path' => $path,
@@ -50,24 +49,24 @@ class LearningToolsController extends Controller
         return response()->json(['message' => 'Material uploaded.', 'id' => $id], 201);
     }
 
-    public function downloadMaterial(Request $request, int $material): BinaryFileResponse
+    public function downloadMaterial(Request $request, int $material, PrivateFiles $files): StreamedResponse
     {
         $item = DB::table('course_materials')->where('id', $material)->first();
         abort_unless($item, 404);
         $this->viewCourse($request, (int) $item->course_id);
-        abort_unless(Storage::disk('local')->exists($item->path), 404, 'File not found.');
+        abort_unless($files->exists($item->path), 404, 'File not found.');
 
-        return response()->download(Storage::disk('local')->path($item->path), $item->original_name, ['Content-Type' => $item->mime_type]);
+        return $files->download($item->path, $item->original_name, $item->mime_type);
     }
 
-    public function submissionFile(Request $request, SubmissionFile $file): BinaryFileResponse
+    public function submissionFile(Request $request, SubmissionFile $file, PrivateFiles $files): StreamedResponse
     {
         $file->load('submission.assignment.course');
         $submission = $file->submission;
         abort_unless($request->user()->id === $submission->student_id || $this->canManage($request, $submission->assignment->course_id), 403);
-        abort_unless(Storage::disk('local')->exists($file->path), 404);
+        abort_unless($files->exists($file->path), 404);
 
-        return response()->download(Storage::disk('local')->path($file->path), $file->original_name, ['Content-Type' => $file->mime_type]);
+        return $files->download($file->path, $file->original_name, $file->mime_type);
     }
 
     public function announcements(Request $request): JsonResponse

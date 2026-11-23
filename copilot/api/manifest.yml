@@ -1,0 +1,77 @@
+name: api
+type: Load Balanced Web Service
+
+image:
+  build:
+    dockerfile: backend/Dockerfile
+    context: backend
+  port: 8080
+  healthcheck:
+    command: ["CMD-SHELL", "curl --fail http://localhost:8080/up || exit 1"]
+    interval: 30s
+    retries: 3
+    timeout: 5s
+    start_period: 90s
+
+http:
+  path: /
+  healthcheck:
+    path: /up
+    success_codes: "200"
+    grace_period: 120s
+  redirect_to_https: true
+
+cpu: 1024
+memory: 3072
+count:
+  range: 1-3
+  cpu_percentage: 70
+  memory_percentage: 80
+exec: true
+
+network:
+  vpc:
+    placement: private
+
+variables:
+  APP_ENV: production
+  APP_DEBUG: "false"
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: warning
+  DB_CONNECTION: pgsql
+  DB_PORT: "5432"
+  DB_SSLMODE: verify-full
+  DB_SSLROOTCERT: /etc/ssl/certs/aws-rds-global-bundle.pem
+  SESSION_DRIVER: database
+  SESSION_ENCRYPT: "true"
+  SESSION_SECURE_COOKIE: "true"
+  SESSION_HTTP_ONLY: "true"
+  SESSION_SAME_SITE: lax
+  FILESYSTEM_DISK: s3
+  FILESYSTEM_THROW: "true"
+  AWS_S3_SERVER_SIDE_ENCRYPTION: aws:kms
+  QUEUE_CONNECTION: database
+  CLAMAV_COMMAND: clamscan
+  FILE_SCAN_REQUIRED: "true"
+  FILE_SCAN_TIMEOUT: "30"
+  AUDIT_RETENTION_DAYS: "365"
+  LMS_MAIL_NOTIFICATIONS: "true"
+  MAIL_MAILER: smtp
+  MAIL_SCHEME: smtp
+
+secrets:
+  APP_KEY: APP_KEY
+  APP_URL: APP_URL
+  FRONTEND_URL: FRONTEND_URL
+  CORS_ALLOWED_ORIGINS: FRONTEND_URL
+  SESSION_DOMAIN: SESSION_DOMAIN
+  SANCTUM_STATEFUL_DOMAINS: SANCTUM_STATEFUL_DOMAINS
+  DB_HOST: DB_HOST
+  DB_DATABASE: DB_DATABASE
+  DB_USERNAME: DB_RUNTIME_USERNAME
+  DB_PASSWORD: DB_RUNTIME_PASSWORD
+  MAIL_HOST: MAIL_HOST
+  MAIL_PORT: MAIL_PORT
+  MAIL_USERNAME: MAIL_USERNAME
+  MAIL_PASSWORD: MAIL_PASSWORD
+  MAIL_FROM_ADDRESS: MAIL_FROM_ADDRESS

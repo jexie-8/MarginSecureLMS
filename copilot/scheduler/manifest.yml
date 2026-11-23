@@ -1,0 +1,34 @@
+name: scheduler
+type: Scheduled Job
+
+on:
+  schedule: "30 3 * * *"
+
+image:
+  build:
+    dockerfile: backend/Dockerfile
+    context: backend
+
+command: ["php", "artisan", "schedule:run", "--no-interaction"]
+cpu: 256
+memory: 512
+retries: 2
+timeout: 10m
+
+variables:
+  APP_ENV: production
+  APP_DEBUG: "false"
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: warning
+  DB_CONNECTION: pgsql
+  DB_PORT: "5432"
+  DB_SSLMODE: verify-full
+  DB_SSLROOTCERT: /etc/ssl/certs/aws-rds-global-bundle.pem
+  AUDIT_RETENTION_DAYS: "365"
+
+secrets:
+  APP_KEY: APP_KEY
+  DB_HOST: DB_HOST
+  DB_DATABASE: DB_DATABASE
+  DB_USERNAME: DB_RUNTIME_USERNAME
+  DB_PASSWORD: DB_RUNTIME_PASSWORD

@@ -1,21 +1,66 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/browser_client.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:web/web.dart' as web;
 
 import '../app_config.dart';
 import '../app_strings.dart';
 import '../errors/app_exception.dart';
+import '../platform/platform.dart';
+import 'input_cleaner.dart';
 
 class ApiClient {
-  ApiClient() : _client = BrowserClient()..withCredentials = true;
+  ApiClient({http.Client? client}) : _client = client ?? createHttpClient();
 
-  final BrowserClient _client;
+  final http.Client _client;
   VoidCallback? onUnauthorized;
 
+  // Mobile only: the bearer token issued at sign-in. The browser app
+  // authenticates with its session cookie instead and never has a token.
+  String? _token;
+
+  void setToken(String? token) => _token = token;
+
+  /// Headers that identify the signed-in user to the API on the current
+  /// platform. Use for any request made outside this client (e.g. images).
+  Map<String, String> get authHeaders => {
+    if (!kIsWeb && _token != null) 'Authorization': 'Bearer $_token',
+  };
+
+  void _addSecurityHeaders(Map<String, String> headers) {
+    headers.addAll(authHeaders);
+    final xsrf = readCookie('XSRF-TOKEN');
+    if (xsrf != null) headers['X-XSRF-TOKEN'] = Uri.decodeComponent(xsrf);
+  }
+
+  /// Downloads a protected file and returns its bytes and suggested name.
+  Future<({List<int> bytes, String? fileName})> getBytes(String path) async {
+    final request = http.Request('GET', AppConfig.uri(path));
+    request.headers['Accept'] = '*/*';
+    _addSecurityHeaders(request.headers);
+    try {
+      final streamed = await _client
+          .send(request)
+          .timeout(AppConfig.requestTimeout);
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode == 401) onUnauthorized?.call();
+      if (response.statusCode >= 400) _throwResponse(response);
+      final disposition = response.headers['content-disposition'] ?? '';
+      final match = RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
+      return (bytes: response.bodyBytes, fileName: match?.group(1));
+    } on TimeoutException {
+      throw const AppException(AppStrings.offline, kind: AppErrorKind.timeout);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const AppException(AppStrings.offline, kind: AppErrorKind.offline);
+    }
+  }
+
   Future<void> prepareCsrf() async {
+    // Only the browser app uses cookies, so only it needs a CSRF token.
+    if (!kIsWeb) return;
     final response = await _client
         .get(
           AppConfig.uri('/sanctum/csrf-cookie'),
@@ -52,10 +97,8 @@ class ApiClient {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
     });
-    final xsrf = _cookie('XSRF-TOKEN');
-    if (xsrf != null)
-      request.headers['X-XSRF-TOKEN'] = Uri.decodeComponent(xsrf);
-    request.fields.addAll(fields);
+    _addSecurityHeaders(request.headers);
+    request.fields.addAll(cleanFields(fields));
     for (final file in files) {
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -105,10 +148,8 @@ class ApiClient {
       'Content-Type': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
     });
-    final xsrf = _cookie('XSRF-TOKEN');
-    if (xsrf != null)
-      request.headers['X-XSRF-TOKEN'] = Uri.decodeComponent(xsrf);
-    if (body != null) request.body = jsonEncode(body);
+    _addSecurityHeaders(request.headers);
+    if (body != null) request.body = jsonEncode(cleanOutgoing(body));
 
     try {
       final streamed = await _client
@@ -168,16 +209,6 @@ class ApiClient {
       fieldErrors: errors,
       referenceId: response.headers['x-request-id'],
     );
-  }
-
-  String? _cookie(String name) {
-    for (final item in web.document.cookie.split(';')) {
-      final parts = item.trim().split('=');
-      if (parts.first == name && parts.length > 1) {
-        return parts.sublist(1).join('=');
-      }
-    }
-    return null;
   }
 
   void close() => _client.close();

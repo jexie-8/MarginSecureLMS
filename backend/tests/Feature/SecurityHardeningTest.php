@@ -30,6 +30,7 @@ class SecurityHardeningTest extends TestCase
     private array $spaHeaders = [
         'Accept' => 'application/json',
         'Origin' => 'http://localhost:5173',
+        'Sec-Fetch-Site' => 'same-site',
     ];
 
     protected function setUp(): void
@@ -131,7 +132,8 @@ class SecurityHardeningTest extends TestCase
         $this->actingAs($administrator)->getJson('/api/v1/submissions')
             ->assertForbidden()
             ->assertHeader('X-Content-Type-Options', 'nosniff')
-            ->assertHeader('X-Frame-Options', 'DENY');
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
 
         $this->assertDatabaseHas('audit_logs', [
             'actor_id' => $administrator->id,

@@ -17,6 +17,18 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <!--
+    Content-Security-Policy. A static site cannot send HTTP headers, so the
+    policy travels in the page. Everything is served from this site; the only
+    outside addresses are the API and Google's font host (Flutter downloads
+    fallback fonts such as Roboto from fonts.gstatic.com when text needs them).
+    Release builds replace the API address below (see scripts/build_web.ps1).
+    'wasm-unsafe-eval' is needed by Flutter's CanvasKit renderer to run
+    WebAssembly, not for JavaScript eval.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8000; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="same-origin">
+
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Margin LMS secure academic workspace.">
   <meta name="theme-color" content="#0B2039">
@@ -32,18 +44,7 @@
 
   <title>Margin LMS</title>
   <link rel="manifest" href="manifest.json">
-  <style>
-    html, body { margin: 0; min-height: 100%; background: #0b2039; }
-    #margin-loader { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: #0b2039; color: #fff; font-family: Inter, Arial, sans-serif; }
-    .margin-loader-content { display: flex; flex-direction: column; align-items: center; gap: 24px; }
-    .margin-loader-brand { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 700; }
-    .margin-loader-mark { width: 56px; height: 48px; object-fit: contain; }
-    .margin-loader-line { width: 180px; height: 3px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.12); }
-    .margin-loader-line::after { content: ''; display: block; width: 45%; height: 100%; background: #55c9be; animation: margin-load 1.2s ease-in-out infinite; }
-    .margin-loader-copy { color: #aebecd; font-size: 12px; }
-    @keyframes margin-load { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
-    @media (prefers-reduced-motion: reduce) { .margin-loader-line::after { animation: none; width: 100%; opacity: .7; } }
-  </style>
+  <link rel="stylesheet" href="loader.css">
 </head>
 <body>
   <div id="margin-loader" role="status" aria-live="polite">
@@ -62,11 +63,6 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    window.addEventListener('flutter-first-frame', function () {
-      const loader = document.getElementById('margin-loader');
-      if (loader) loader.remove();
-    });
-  </script>
+  <script src="loader.js"></script>
 </body>
 </html>

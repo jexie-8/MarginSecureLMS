@@ -5,13 +5,28 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:web/web.dart' as web;
 
 import '../../core/app_config.dart';
 import '../../core/auth/session_controller.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/download.dart';
 import '../../shared/app_widgets.dart';
+
+/// Downloads a protected file (browser: opens it; mobile: fetches and opens it).
+Future<void> _download(BuildContext context, String path) async {
+  final api = context.read<ApiClient>();
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    await downloadFromApi(api, path);
+  } on AppException catch (error) {
+    messenger.showSnackBar(SnackBar(content: Text(error.message)));
+  } catch (_) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('The file could not be opened.')),
+    );
+  }
+}
 
 class LearningToolPage extends StatefulWidget {
   const LearningToolPage({super.key, required this.section});
@@ -329,9 +344,9 @@ class _LearningToolPageState extends State<LearningToolPage> {
             ? IconButton(
                 tooltip: 'Download',
                 icon: const Icon(Icons.download_outlined),
-                onPressed: () => web.window.open(
-                  '${AppConfig.apiOrigin}${AppConfig.apiPrefix}/materials/${item['id']}/download',
-                  '_blank',
+                onPressed: () => _download(
+                  context,
+                  '${AppConfig.apiPrefix}/materials/${item['id']}/download',
                 ),
               )
             : null,
@@ -602,9 +617,9 @@ class _DataToolsState extends State<_DataTools> {
               OutlinedButton.icon(
                 onPressed: courseId == null
                     ? null
-                    : () => web.window.open(
-                        '${AppConfig.apiOrigin}${AppConfig.apiPrefix}/courses/$courseId/grades.csv',
-                        '_blank',
+                    : () => _download(
+                        context,
+                        '${AppConfig.apiPrefix}/courses/$courseId/grades.csv',
                       ),
                 icon: const Icon(Icons.download_outlined),
                 label: const Text('Export grades CSV'),

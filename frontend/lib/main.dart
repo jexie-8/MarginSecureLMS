@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/app_config.dart';
 import 'core/app_strings.dart';
 import 'core/auth/session_controller.dart';
 import 'core/cache/app_cache.dart';
@@ -19,6 +20,7 @@ import 'shared/state_pages.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppConfig.assertSecureTransport();
   usePathUrlStrategy();
   final preferences = await SharedPreferences.getInstance();
   final api = ApiClient();

@@ -2,11 +2,16 @@
 
 use App\Http\Middleware\AuditAuthorizationFailures;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\RequireBrowserContext;
+use App\Http\Middleware\SanitizeInput;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->statefulApi();
         $middleware->appendToGroup('api', [
+            RequireBrowserContext::class,
+            SanitizeInput::class,
             SecurityHeaders::class,
             AuditAuthorizationFailures::class,
         ]);
@@ -37,4 +44,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Laravel's default messages name internal classes ("No query results for
+        // model [App\Models\Course] 5") and list a route's supported methods.
+        // Give attackers nothing to learn from.
+        $isApi = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
+        $exceptions->render(fn (ModelNotFoundException|NotFoundHttpException $e, Request $request) => $isApi($request)
+            ? response()->json(['message' => 'Not found.'], 404)
+            : null);
+        $exceptions->render(fn (MethodNotAllowedHttpException $e, Request $request) => $isApi($request)
+            ? response()->json(['message' => 'Method not allowed.'], 405)
+            : null);
     })->create();

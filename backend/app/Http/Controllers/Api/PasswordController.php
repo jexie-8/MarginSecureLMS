@@ -14,7 +14,7 @@ class PasswordController extends Controller
     public function update(Request $request, AuditLogger $audit): JsonResponse
     {
         $data = $request->validate([
-            'current_password' => ['required', 'current_password:web'],
+            'current_password' => ['required', 'current_password:sanctum'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $request->user()->forceFill(['password' => $data['password']])->save();
@@ -24,6 +24,11 @@ class PasswordController extends Controller
             $otherSessions->where('id', '!=', $request->session()->getId());
         }
         $otherSessions->delete();
+        // Mobile devices: revoke every API token except the one making this request.
+        $currentToken = $request->user()->currentAccessToken();
+        $request->user()->tokens()
+            ->when($currentToken instanceof \Laravel\Sanctum\PersonalAccessToken, fn ($q) => $q->where('id', '!=', $currentToken->id))
+            ->delete();
         $audit->record($request->user(), 'password.changed', $request->user(), [], $request);
 
         return response()->json(['message' => 'Password changed successfully.']);

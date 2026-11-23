@@ -9,6 +9,7 @@ import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../shared/app_widgets.dart';
+import 'privacy_pages.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -94,6 +95,7 @@ class ProfilePage extends StatelessWidget {
                       ? null
                       : NetworkImage(
                           '${AppConfig.apiOrigin}${Uri.parse(user.avatarUrl!).path}',
+                          headers: context.read<ApiClient>().authHeaders,
                         ),
                   child: Text(
                     _initials(user.name),
@@ -272,6 +274,8 @@ class ProfilePage extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         account,
+        const SizedBox(height: 18),
+        const PrivacyCard(),
         const SizedBox(height: 18),
         const ActiveSessionsCard(),
       ],
@@ -796,5 +800,59 @@ class _MfaSetupDialogState extends State<MfaSetupDialog> {
         child: Text(widget.enabled || recovery.isEmpty ? 'Cancel' : 'Done'),
       ),
     ],
+  );
+}
+
+
+/// Privacy notice and personal-data download.
+class PrivacyCard extends StatelessWidget {
+  const PrivacyCard({super.key});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Privacy and data',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'See how your information is used, or download a copy of it.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const PrivacyNoticeDialog(),
+                ),
+                icon: const Icon(Icons.privacy_tip_outlined),
+                label: const Text('Privacy notice'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const ExportDataDialog(),
+                ),
+                icon: const Icon(Icons.download_outlined),
+                label: const Text('Download my data'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }

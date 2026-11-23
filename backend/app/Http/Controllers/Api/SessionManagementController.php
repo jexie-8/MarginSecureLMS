@@ -13,6 +13,8 @@ class SessionManagementController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        // Browser sessions are managed from the web app; a mobile token has none.
+        abort_unless($request->hasSession(), 403, 'Manage browser sessions from the web app.');
         $currentId = $request->session()->getId();
         $sessions = DB::table($this->table())
             ->where('user_id', $request->user()->id)
@@ -31,7 +33,8 @@ class SessionManagementController extends Controller
 
     public function destroy(Request $request, string $session, AuditLogger $audit): JsonResponse
     {
-        $request->validate(['current_password' => ['required', 'current_password:web']]);
+        abort_unless($request->hasSession(), 403, 'Manage browser sessions from the web app.');
+        $request->validate(['current_password' => ['required', 'current_password:sanctum']]);
         $currentId = $request->session()->getId();
         $target = DB::table($this->table())
             ->where('user_id', $request->user()->id)

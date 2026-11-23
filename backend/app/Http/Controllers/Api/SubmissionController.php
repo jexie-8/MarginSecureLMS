@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use App\Models\SubmissionFile;
 use App\Services\FileSecurityScanner;
+use App\Services\PrivateFiles;
 
 class SubmissionController extends Controller
 {
@@ -33,7 +34,7 @@ class SubmissionController extends Controller
         return SubmissionResource::collection($query->paginate($this->perPage($request)));
     }
 
-    public function store(Request $request, Assignment $assignment, AuditLogger $audit, FileSecurityScanner $scanner): SubmissionResource
+    public function store(Request $request, Assignment $assignment, AuditLogger $audit, FileSecurityScanner $scanner, PrivateFiles $files): SubmissionResource
     {
         $assignment->loadMissing('course');
         $this->ensureUniversityVisible($request->user(), $assignment->course->university_id);
@@ -62,7 +63,7 @@ class SubmissionController extends Controller
             ]);
         });
         foreach ($request->file('files', []) as $file) {
-            $path = $file->store('submissions/'.$submission->id, 'local');
+            $path = $files->store($file, 'submissions/'.$submission->id);
             SubmissionFile::query()->create([
                 'submission_id' => $submission->id, 'path' => $path,
                 'original_name' => $file->getClientOriginalName(), 'mime_type' => $file->getMimeType(), 'size' => $file->getSize(),

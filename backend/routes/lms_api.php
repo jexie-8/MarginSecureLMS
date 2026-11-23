@@ -10,22 +10,27 @@ use App\Http\Controllers\Api\LearningToolsController;
 use App\Http\Controllers\Api\MfaController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\PrivacyController;
 use App\Http\Controllers\Api\ProfileDataController;
 use App\Http\Controllers\Api\ProgramController;
 use App\Http\Controllers\Api\SessionManagementController;
 use App\Http\Controllers\Api\SubmissionController;
 use App\Http\Controllers\Api\UniversityController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Middleware\BindSessionToClient;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\SetDatabaseUserContext;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('margin.')->group(function (): void {
+    Route::get('/privacy-notice', [PrivacyController::class, 'notice'])
+        ->middleware('throttle:60,1')->name('privacy.notice');
     Route::post('/forgot-password', [PasswordResetController::class, 'requestLink'])
         ->middleware('throttle:password-reset')->name('password.email');
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])
         ->middleware('throttle:password-reset')->name('password.reset');
 
-    Route::middleware(['auth:web', EnsureAccountIsActive::class, 'throttle:margin-api'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, BindSessionToClient::class, SetDatabaseUserContext::class, 'throttle:margin-api'])->group(function (): void {
         Route::apiResource('universities', UniversityController::class)->only(['index', 'store', 'show', 'update']);
         Route::apiResource('departments', DepartmentController::class)->only(['index', 'store', 'show', 'update']);
         Route::apiResource('programs', ProgramController::class)->only(['index', 'store', 'show', 'update']);
@@ -69,6 +74,8 @@ Route::prefix('v1')->name('margin.')->group(function (): void {
         Route::get('/courses/{course}/grade-summary', [LearningToolsController::class, 'gradeSummary'])->name('courses.grade_summary');
         Route::get('/courses/{course}/grades.csv', [LearningToolsController::class, 'exportGrades'])->name('courses.grades_export');
 
+        Route::post('/profile/export', [PrivacyController::class, 'export'])
+            ->middleware('throttle:5,60')->name('profile.export');
         Route::put('/profile', [ProfileDataController::class, 'updateProfile'])->name('profile.update');
         Route::post('/profile/avatar', [ProfileDataController::class, 'uploadAvatar'])->name('profile.avatar.store');
         Route::get('/profile/avatar/{user}', [ProfileDataController::class, 'avatar'])->name('profile.avatar.show');

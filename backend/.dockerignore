@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+!.env.production.example
+.git
+.gitignore
+.phpunit.cache
+.phpunit.result.cache
+phpunit*.xml
+tests
+vendor
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+bootstrap/cache/*.php

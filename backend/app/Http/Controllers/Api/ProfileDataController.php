@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\FileSecurityScanner;
+use App\Services\PrivateFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProfileDataController extends Controller
 {
@@ -23,26 +23,26 @@ class ProfileDataController extends Controller
         return response()->json(['message' => 'Profile updated.', 'user' => $request->user()->only(['id', 'name', 'email', 'role'])]);
     }
 
-    public function uploadAvatar(Request $request, FileSecurityScanner $scanner): JsonResponse
+    public function uploadAvatar(Request $request, FileSecurityScanner $scanner, PrivateFiles $files): JsonResponse
     {
         $request->validate(['avatar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:4096', 'dimensions:min_width=64,min_height=64,max_width=4096,max_height=4096']]);
         $file = $request->file('avatar');
         $scanner->validate($file);
         if ($request->user()->avatar_path) {
-            Storage::disk('local')->delete($request->user()->avatar_path);
+            $files->delete($request->user()->avatar_path);
         }
-        $path = $file->store('avatars/'.$request->user()->id, 'local');
+        $path = $files->store($file, 'avatars/'.$request->user()->id);
         $request->user()->forceFill(['avatar_path' => $path])->save();
 
         return response()->json(['message' => 'Profile photo updated.', 'avatar_url' => url('/api/v1/profile/avatar/'.$request->user()->id)]);
     }
 
-    public function avatar(Request $request, User $user): BinaryFileResponse
+    public function avatar(Request $request, User $user, PrivateFiles $files): StreamedResponse
     {
         abort_unless($request->user()->id === $user->id || ($request->user()->university_id !== null && $request->user()->university_id === $user->university_id) || $request->user()->isPlatformAdmin(), 404);
-        abort_unless($user->avatar_path && Storage::disk('local')->exists($user->avatar_path), 404);
+        abort_unless($user->avatar_path && $files->exists($user->avatar_path), 404);
 
-        return response()->file(Storage::disk('local')->path($user->avatar_path), ['Cache-Control' => 'private, max-age=3600']);
+        return $files->inline($user->avatar_path, ['Cache-Control' => 'private, max-age=3600']);
     }
 
     public function importUsers(Request $request, FileSecurityScanner $scanner): JsonResponse

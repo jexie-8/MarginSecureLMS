@@ -28,9 +28,12 @@ class GradeService
         return DB::transaction(function () use (
             $actor, $submission, $score, $feedback, $rubricScores, $rubricProvided, $changeReason
         ) {
-            $submission = Submission::query()
-                ->lockForUpdate()
-                ->findOrFail($submission->id);
+            // Serialize concurrent grading of the same submission with an
+            // advisory lock. Row locks (FOR UPDATE) would need UPDATE rights
+            // on submissions, which are immutable at the database level.
+            DB::select('select pg_advisory_xact_lock(?)', [$submission->id]);
+
+            $submission = Submission::query()->findOrFail($submission->id);
 
             $grade = $submission->grade()
                 ->lockForUpdate()

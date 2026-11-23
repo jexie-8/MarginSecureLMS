@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a newly published vulnerability in a dependency is noticed
+    # even when nobody has changed the code.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests and dependency audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: margin_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_pgsql, pgsql, zip
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - name: Known vulnerabilities in dependencies
+        run: composer audit --no-interaction
+      - name: Tests
+        run: php artisan test -c phpunit.margin.xml
+
+  frontend:
+    name: Frontend analysis and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

@@ -23,6 +23,7 @@ class AuthenticationSessionSecurityTest extends TestCase
     private array $spaHeaders = [
         'Accept' => 'application/json',
         'Origin' => 'http://localhost:3000',
+        'Sec-Fetch-Site' => 'same-site',
     ];
 
     protected function setUp(): void
@@ -182,7 +183,7 @@ class AuthenticationSessionSecurityTest extends TestCase
         }
     }
 
-    public function test_routes_use_one_stateful_stack_and_reject_bearer_tokens(): void
+    public function test_routes_accept_sessions_or_valid_tokens_and_reject_invalid_bearer_tokens(): void
     {
         $login = collect(app('router')->getRoutes())->first(
             fn ($route): bool => $route->uri() === 'api/v1/login'
@@ -194,8 +195,9 @@ class AuthenticationSessionSecurityTest extends TestCase
         $this->assertNotNull($login);
         $this->assertNotNull($me);
         $this->assertNotContains('web', $login->gatherMiddleware());
-        $this->assertContains('auth:web', $me->gatherMiddleware());
-        $this->assertNotContains('auth:sanctum', $me->gatherMiddleware());
+        // Browsers use the cookie session; the mobile app uses an expiring bearer
+        // token. Both are checked by the same Sanctum guard.
+        $this->assertContains('auth:sanctum', $me->gatherMiddleware());
 
         $this->withHeaders($this->spaHeaders + ['Authorization' => 'Bearer not-a-margin-auth-method'])
             ->getJson('/api/v1/me')

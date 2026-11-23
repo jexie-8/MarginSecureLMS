@@ -1,0 +1,6 @@
+name: web
+type: Static Site
+
+files:
+  - source: frontend/build/web
+    recursive: true

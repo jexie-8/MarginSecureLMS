@@ -9,6 +9,7 @@ import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../shared/app_widgets.dart';
+import '../settings/privacy_pages.dart';
 
 class _AuthFrame extends StatelessWidget {
   const _AuthFrame({required this.child});
@@ -299,6 +300,16 @@ class _LoginPageState extends State<LoginPage> {
                       ? null
                       : () => context.go('/forgot-password'),
                   child: const Text('Forgot password?'),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => const PrivacyNoticeDialog(),
+                  ),
+                  child: const Text('Privacy notice'),
                 ),
               ),
               const SizedBox(height: 10),
