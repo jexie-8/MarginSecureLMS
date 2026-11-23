@@ -7,7 +7,7 @@ use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rules\Password;
+use App\Support\PasswordPolicy;
 
 class PasswordController extends Controller
 {
@@ -15,7 +15,7 @@ class PasswordController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'current_password:sanctum'],
-            'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', PasswordPolicy::rule()],
         ]);
         $request->user()->forceFill(['password' => $data['password']])->save();
         $otherSessions = DB::table((string) config('session.table', 'sessions'))

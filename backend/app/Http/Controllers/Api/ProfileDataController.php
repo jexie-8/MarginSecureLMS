@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\FileSecurityScanner;
 use App\Services\PrivateFiles;
+use App\Support\PasswordPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,13 +64,13 @@ class ProfileDataController extends Controller
                 continue;
             }
             $row = array_combine($header, $values);
-            $validator = validator($row, ['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'unique:users,email'], 'role' => ['required', Rule::in(['department_admin', 'lecturer', 'teaching_assistant', 'student'])], 'password' => ['required', 'string', 'min:12']]);
+            $validator = validator($row, ['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'unique:users,email'], 'role' => ['required', Rule::in(['department_admin', 'lecturer', 'teaching_assistant', 'student'])], 'password' => ['required', 'string', PasswordPolicy::rule()]]);
             if ($validator->fails()) {
                 $errors[] = $row['email'].': '.$validator->errors()->first();
 
                 continue;
             }
-            User::query()->create(['name' => $row['name'], 'email' => strtolower($row['email']), 'role' => $row['role'], 'password' => Hash::make($row['password']), 'account_status' => 'active', 'university_id' => $request->user()->isPlatformAdmin() ? ($row['university_id'] ?? null) : $request->user()->university_id, 'department_id' => $row['department_id'] ?: null]);
+            User::query()->create(['name' => $row['name'], 'email' => strtolower($row['email']), 'role' => $row['role'], 'password' => Hash::make($row['password']), 'account_status' => 'active', 'university_id' => $request->user()->isPlatformAdmin() ? ($row['university_id'] ?? null) : $request->user()->university_id, 'department_id' => ($row['department_id'] ?? null) ?: null]);
             $created++;
         }
         fclose($handle);

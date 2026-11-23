@@ -18,10 +18,22 @@ class TotpService
 
     public function verify(string $secret, string $code): bool
     {
-        if (! preg_match('/^\d{6}$/', $code)) return false;
+        return $this->matchingStep($secret, $code) !== null;
+    }
+
+    /**
+     * The 30-second time step the code belongs to (allowing one step either
+     * side for clock drift), or null if it is wrong. Callers use the step to
+     * stop the same code being accepted twice.
+     */
+    public function matchingStep(string $secret, string $code): ?int
+    {
+        if (! preg_match('/^\d{6}$/', $code)) return null;
         $counter = intdiv(time(), 30);
-        for ($offset = -1; $offset <= 1; $offset++) if (hash_equals($this->code($secret, $counter + $offset), $code)) return true;
-        return false;
+        for ($offset = -1; $offset <= 1; $offset++) {
+            if (hash_equals($this->code($secret, $counter + $offset), $code)) return $counter + $offset;
+        }
+        return null;
     }
 
     private function code(string $secret, int $counter): string

@@ -16,6 +16,12 @@ return [
     // our own app (checks the Sec-Fetch-Site header). Leave on in production.
     'require_browser_context' => (bool) env('REQUIRE_BROWSER_CONTEXT', true),
 
+    // Hard limit on a browser session, in minutes, however active it is. 0 disables.
+    'session_absolute_minutes' => (int) env('SESSION_ABSOLUTE_MINUTES', 720),
+
+    // Reject passwords that appear in public breach lists (Have I Been Pwned).
+    'check_breached_passwords' => (bool) env('CHECK_BREACHED_PASSWORDS', true),
+
     // Lifetime of a mobile API token. After it expires the user signs in again.
     'mobile_token_hours' => (int) env('MOBILE_TOKEN_HOURS', 8),
 

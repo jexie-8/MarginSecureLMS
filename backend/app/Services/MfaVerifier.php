@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -20,8 +21,15 @@ class MfaVerifier
     {
         $code = Str::upper(trim($submitted));
 
-        if ($user->mfa_secret && $this->totp->verify($user->mfa_secret, $code)) {
-            return 'totp';
+        $step = $user->mfa_secret ? $this->totp->matchingStep($user->mfa_secret, $code) : null;
+        if ($step !== null) {
+            // A code works once. Remember each accepted step for longer than its
+            // validity window so a captured code cannot be replayed.
+            if (Cache::add("totp-used:{$user->id}:{$step}", true, now()->addMinutes(3))) {
+                return 'totp';
+            }
+
+            return null;
         }
 
         $codes = $user->mfa_recovery_codes ?? [];

@@ -54,7 +54,7 @@ abstract final class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
-      fontFamily: 'Inter',
+      fontFamily: 'Roboto',
     );
     return base.copyWith(
       textTheme: base.textTheme.apply(bodyColor: text, displayColor: text),

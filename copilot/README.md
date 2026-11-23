@@ -4,7 +4,7 @@ AWS Copilot is configured for four workloads: the public API, a private queue wo
 
 Before any deployment:
 
-1. Choose an AWS region and two related domains, such as `lms.example.edu` and `api.example.edu`.
+1. Region: `eu-central-1` (Frankfurt), already set in the manifest and `.env.production.example`. Domains: choose two related ones; `lms.example.edu` and `api.example.edu` are placeholders until then.
 2. Provision private RDS PostgreSQL and require TLS. Create a restricted runtime account and a separate migration account.
    Row-Level Security does not apply to superusers, so the runtime account must not be one. The RLS migration creates a `margin_app` role with the exact privileges the app needs; run `GRANT margin_app TO <runtime_account>;` once after the first migration and make sure the runtime account is not the table owner or an RDS master user.
 3. Create the Copilot environment secrets referenced by the manifests. Store the migration credentials separately and use them only for a one-off migration task.

@@ -157,6 +157,6 @@ class PrivateFileStorageTest extends TestCase
         $this->assertMatchesRegularExpression('/FILESYSTEM_DISK:\s*s3/', $manifest);
 
         $env = file_get_contents(base_path('.env.production.example'));
-        $this->assertMatchesRegularExpression('/^FILESYSTEM_DISK=s3$/m', $env);
+        $this->assertMatchesRegularExpression('/^FILESYSTEM_DISK=s3\r?$/m', $env);
     }
 }

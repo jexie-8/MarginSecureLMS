@@ -43,7 +43,11 @@ variables:
   DB_SSLMODE: verify-full
   DB_SSLROOTCERT: /etc/ssl/certs/aws-rds-global-bundle.pem
   SESSION_DRIVER: database
+  AWS_DEFAULT_REGION: eu-central-1
   SESSION_ENCRYPT: "true"
+  SESSION_ABSOLUTE_MINUTES: "720"
+  CHECK_BREACHED_PASSWORDS: "true"
+  REQUIRE_BROWSER_CONTEXT: "true"
   SESSION_SECURE_COOKIE: "true"
   SESSION_HTTP_ONLY: "true"
   SESSION_SAME_SITE: lax

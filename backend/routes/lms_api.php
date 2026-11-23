@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\SubmissionController;
 use App\Http\Controllers\Api\UniversityController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Middleware\BindSessionToClient;
+use App\Http\Middleware\EnforceAbsoluteSessionLifetime;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\SetDatabaseUserContext;
 use Illuminate\Support\Facades\Route;
@@ -30,7 +31,7 @@ Route::prefix('v1')->name('margin.')->group(function (): void {
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])
         ->middleware('throttle:password-reset')->name('password.reset');
 
-    Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, BindSessionToClient::class, SetDatabaseUserContext::class, 'throttle:margin-api'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, BindSessionToClient::class, EnforceAbsoluteSessionLifetime::class, SetDatabaseUserContext::class, 'throttle:margin-api'])->group(function (): void {
         Route::apiResource('universities', UniversityController::class)->only(['index', 'store', 'show', 'update']);
         Route::apiResource('departments', DepartmentController::class)->only(['index', 'store', 'show', 'update']);
         Route::apiResource('programs', ProgramController::class)->only(['index', 'store', 'show', 'update']);

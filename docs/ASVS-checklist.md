@@ -12,9 +12,9 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 
 | Status | Count |
 |---|---|
-| ✅ Met | 76 |
+| ✅ Met | 79 |
 | 🟡 Partly met | 8 |
-| ❌ Not met | 3 |
+| ❌ Not met | 0 |
 | ⏳ Depends on deployment | 5 |
 | ➖ Not applicable | 3 |
 
@@ -82,7 +82,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 |---|---|---|---|
 | Minimum password length of 12 | ✅ | `Password::min(12)` in `PasswordController`, `PasswordResetController` | Yes |
 | Password complexity rules | ✅ | `mixedCase()->numbers()->symbols()` | Yes |
-| Check against known breached passwords | ❌ | Not used (`Password::uncompromised()` would add it) | No |
+| Check against known breached passwords | ✅ | `PasswordPolicy::rule()` adds Laravel's `uncompromised()` check (only a 5-character hash prefix is sent to Have I Been Pwned; skipped if the service is down); used for password change, reset and bulk import (import previously only checked length) | Yes (`AccountProtectionGapsTest`) |
 | Passwords hashed with an adaptive algorithm | ✅ | bcrypt, 12 rounds; `password` cast `hashed` in `User` | Yes |
 | Login throttling and temporary lockout | ✅ | 5 attempts per minute per email and IP (`AuthController`) | Yes |
 | Generic error for wrong credentials or disabled account | ✅ | "Invalid credentials or account unavailable." | Yes |
@@ -90,7 +90,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 | Password reset by time-limited emailed link | ✅ | Laravel broker, 60-minute expiry (`config/auth.php`); same response whether or not the email exists | Yes |
 | Password reset ends existing sessions | ✅ | Fixed 2026-11-23 in `PasswordResetController` | Yes (`PasswordResetSessionRevocationTest`) |
 | Multi-factor authentication available | 🟡 | TOTP for admin roles only, optional to enrol; recovery codes stored hashed. Students and lecturers have none | Yes |
-| A used TOTP code cannot be replayed within its time window | ❌ | Not tracked | No |
+| A used TOTP code cannot be replayed within its time window | ✅ | `MfaVerifier` remembers each accepted 30-second step for 3 minutes | Yes (`AccountProtectionGapsTest`) |
 | No default or demo accounts in production | ✅ | `DatabaseSeeder` throws in production | Yes |
 
 ## V7 Session Management
@@ -103,7 +103,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 | Cookie flags: Secure, HttpOnly, SameSite | ✅ | Production env sets `SESSION_SECURE_COOKIE`, `SESSION_HTTP_ONLY`, `SESSION_SAME_SITE=lax` | ⏳ Deployment |
 | Session data encrypted at rest | ✅ | `SESSION_ENCRYPT=true` | No |
 | Idle timeout | ✅ | `SESSION_LIFETIME=120` minutes | No |
-| Absolute session timeout | ❌ | Sessions renew while active, with no maximum lifetime | No |
+| Absolute session timeout | ✅ | `EnforceAbsoluteSessionLifetime`: 12 hours by default (`SESSION_ABSOLUTE_MINUTES`), audited | Yes (`AccountProtectionGapsTest`) |
 | User can list and revoke active sessions | ✅ | `SessionManagementController` (revocation needs the password) | Yes |
 | Sessions ended on password change and on account deactivation | ✅ | `PasswordController`, `EnsureAccountIsActive` | Yes |
 
@@ -140,7 +140,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 | Approved encryption for application secrets | ✅ | Laravel encrypter, AES-256-CBC with HMAC (`config/app.php`) | No |
 | Secrets in the database encrypted | ✅ | `mfa_secret`, `mfa_recovery_codes` cast `encrypted` | Yes |
 | Randomness from a cryptographically secure generator | ✅ | `random_bytes`, `Str::random` | n/a |
-| Keys kept out of the repository | 🟡 | Production keys come from environment secrets. A local development database password is committed in `backend/.env.testing`; replace it with an example file | No |
+| Keys kept out of the repository | 🟡 | Production keys come from environment secrets. `.env.testing.example` and a `.gitignore` entry are in place; the old `backend/.env.testing` (local DB password) stays tracked until `git rm --cached backend/.env.testing` is run | No |
 
 ## V12 Secure Communication
 
@@ -200,8 +200,6 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 
 ## Gaps to close (from this assessment)
 
-1. **Absolute session timeout** (V7).
-2. **TOTP replay protection** (V6) and wider MFA coverage.
-3. **Breached-password check** (V6).
-4. **Turn on the dependency routine** (V13): push `.github/` to GitHub.
-5. **Replace the committed `.env.testing` database password** with an example file (V11).
+1. **Turn on the dependency routine** (V13): push `.github/` to GitHub.
+2. **Stop tracking `backend/.env.testing`** (V11): run `git rm --cached backend/.env.testing`.
+3. **Items that depend on deployment** (V5, V12, V14): TLS, private database, encryption at rest, antivirus scan, real S3 bucket.

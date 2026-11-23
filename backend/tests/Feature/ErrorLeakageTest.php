@@ -126,7 +126,7 @@ class ErrorLeakageTest extends TestCase
     {
         $example = file_get_contents(base_path('.env.production.example'));
 
-        $this->assertMatchesRegularExpression('/^APP_DEBUG=false$/m', $example);
-        $this->assertMatchesRegularExpression('/^APP_ENV=production$/m', $example);
+        $this->assertMatchesRegularExpression('/^APP_DEBUG=false\r?$/m', $example);
+        $this->assertMatchesRegularExpression('/^APP_ENV=production\r?$/m', $example);
     }
 }

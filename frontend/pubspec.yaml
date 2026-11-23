@@ -71,6 +71,19 @@ flutter:
   assets:
     - assets/images/margin_lms_logo.png
 
+  # Roboto is bundled so the app never downloads its main font from a third party.
+  # Apache License 2.0, see assets/fonts/LICENSE-Roboto.txt.
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Roboto-Italic.ttf
+          style: italic
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
