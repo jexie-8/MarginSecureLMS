@@ -13,7 +13,7 @@ RUN composer install \
 COPY . .
 RUN composer dump-autoload --classmap-authoritative --no-dev --no-interaction
 
-FROM php:8.4-fpm-bookworm AS runtime
+FROM php:8.6-fpm-bookworm AS runtime
 
 ENV APP_ENV=production \
     APP_DEBUG=false
