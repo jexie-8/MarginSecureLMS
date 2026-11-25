@@ -100,7 +100,7 @@ abstract final class ResourceCatalog {
     icon: Icons.assignment_outlined,
     columns: {
       'title': 'Assignment',
-      'course_id': 'Course',
+      'course': 'Course',
       'max_score': 'Max score',
       'due_at': 'Due',
       'published_at': 'Status',

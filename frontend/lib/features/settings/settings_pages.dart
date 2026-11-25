@@ -9,6 +9,7 @@ import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../shared/app_widgets.dart';
+import '../../shared/formatting.dart';
 import 'privacy_pages.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -136,13 +137,15 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 18),
             StatusBadge(user.roleLabel),
             const Divider(height: 36),
-            _Detail(
-              'University ID',
-              user.universityId?.toString() ?? 'Not assigned',
+            _RecordDetail(
+              label: 'University',
+              endpoint: 'universities',
+              id: user.universityId,
             ),
-            _Detail(
-              'Department ID',
-              user.departmentId?.toString() ?? 'Not assigned',
+            _RecordDetail(
+              label: 'Department',
+              endpoint: 'departments',
+              id: user.departmentId,
             ),
           ],
         ),
@@ -446,6 +449,54 @@ class _ActiveSessionsCardState extends State<ActiveSessionsCard> {
       ),
     ),
   );
+}
+
+/// Shows the name of the user's university or department, not its id.
+class _RecordDetail extends StatefulWidget {
+  const _RecordDetail({
+    required this.label,
+    required this.endpoint,
+    required this.id,
+  });
+  final String label, endpoint;
+  final int? id;
+
+  @override
+  State<_RecordDetail> createState() => _RecordDetailState();
+}
+
+class _RecordDetailState extends State<_RecordDetail> {
+  String? name;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RecordDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) _load();
+  }
+
+  Future<void> _load() async {
+    final id = widget.id;
+    if (id == null) return;
+    try {
+      final json = await context.read<ApiClient>().get(
+        '${AppConfig.apiPrefix}/${widget.endpoint}/$id',
+      );
+      final row = json is Map ? json['data'] : null;
+      if (mounted && row is Map) setState(() => name = recordName(row));
+    } catch (_) {
+      // Keep the placeholder below.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _Detail(widget.label, widget.id == null ? 'Not assigned' : name ?? '…');
 }
 
 class _Detail extends StatelessWidget {
@@ -802,7 +853,6 @@ class _MfaSetupDialogState extends State<MfaSetupDialog> {
     ],
   );
 }
-
 
 /// Privacy notice and personal-data download.
 class PrivacyCard extends StatelessWidget {

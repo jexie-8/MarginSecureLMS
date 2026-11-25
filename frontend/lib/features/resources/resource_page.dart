@@ -12,6 +12,7 @@ import '../../core/cache/app_cache.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
 import '../../shared/app_widgets.dart';
+import '../../shared/formatting.dart';
 import 'resource_catalog.dart';
 import 'resource_repository.dart';
 import 'submit_work.dart';
@@ -36,6 +37,8 @@ class _ResourcePageState extends State<ResourcePage> {
   bool loading = true;
   bool refreshing = false;
   int page = 1;
+  // Names for columns that hold another record's id (see _lookupEndpoints).
+  Map<String, Map<int, String>> lookups = {};
 
   @override
   void initState() {
@@ -49,7 +52,10 @@ class _ResourcePageState extends State<ResourcePage> {
       session.user!.id,
     );
     _search.addListener(_searchChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _loadLookups();
+    });
   }
 
   @override
@@ -60,9 +66,41 @@ class _ResourcePageState extends State<ResourcePage> {
       config =
           widget.overrideConfig ?? ResourceCatalog.forSection(widget.section);
       page = 1;
+      lookups = {};
       _search.clear();
       _load();
+      _loadLookups();
     }
+  }
+
+  // Columns that hold another record's id, and where to find its name.
+  static const _lookupEndpoints = {
+    'course_id': 'courses',
+    'university_id': 'universities',
+    'department_ids': 'departments',
+    'actor_id': 'users',
+  };
+
+  Future<void> _loadLookups() async {
+    final api = context.read<ApiClient>();
+    final wanted = config.columns.keys.where(_lookupEndpoints.containsKey);
+    final found = <String, Map<int, String>>{};
+    for (final key in wanted) {
+      try {
+        final json = await api.get(
+          '${AppConfig.apiPrefix}/${_lookupEndpoints[key]}',
+          query: {'per_page': 100},
+        );
+        final data = json is Map ? json['data'] : null;
+        found[key] = {
+          for (final row in (data is List ? data : const []).whereType<Map>())
+            if (row['id'] is num) (row['id'] as num).toInt(): recordName(row),
+        };
+      } on AppException {
+        // Not permitted or offline: the column shows "#id" instead.
+      }
+    }
+    if (mounted && found.isNotEmpty) setState(() => lookups = found);
   }
 
   @override
@@ -201,7 +239,9 @@ class _ResourcePageState extends State<ResourcePage> {
                               ),
                             ),
                           ),
-                          Expanded(child: _valueWidget(item, entry.key)),
+                          Expanded(
+                            child: _valueWidget(item, entry.key, lookups),
+                          ),
                         ],
                       ),
                     ),
@@ -487,6 +527,7 @@ class _ResourcePageState extends State<ResourcePage> {
                   _ResourceList(
                     config: config,
                     items: visibleItems,
+                    lookups: lookups,
                     userRole: user.role,
                     onView: _view,
                     onEdit: _canWrite && config.canEdit ? _edit : null,
@@ -535,6 +576,7 @@ class _ResourceList extends StatelessWidget {
   const _ResourceList({
     required this.config,
     required this.items,
+    this.lookups = const {},
     required this.userRole,
     required this.onView,
     this.onEdit,
@@ -547,6 +589,7 @@ class _ResourceList extends StatelessWidget {
   });
   final ResourceConfig config;
   final List<Map<String, dynamic>> items;
+  final Map<String, Map<int, String>> lookups;
   final String userRole;
   final ValueChanged<Map<String, dynamic>> onView;
   final ValueChanged<Map<String, dynamic>>? onEdit,
@@ -652,7 +695,11 @@ class _ResourceList extends StatelessWidget {
                                     ),
                                   ),
                                   Expanded(
-                                    child: _valueWidget(item, entry.key),
+                                    child: _valueWidget(
+                                      item,
+                                      entry.key,
+                                      lookups,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -688,7 +735,7 @@ class _ResourceList extends StatelessWidget {
                       (key) => DataCell(
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 260),
-                          child: _valueWidget(item, key),
+                          child: _valueWidget(item, key, lookups),
                         ),
                       ),
                     ),
@@ -709,8 +756,12 @@ class _ResourceList extends StatelessWidget {
   );
 }
 
-Widget _valueWidget(Map<String, dynamic> item, String key) {
-  final value = _value(item, key);
+Widget _valueWidget(
+  Map<String, dynamic> item,
+  String key, [
+  Map<String, Map<int, String>> lookups = const {},
+]) {
+  final value = _value(item, key, lookups);
   if (key.contains('status') || key == 'role' || key == 'published_at')
     return StatusBadge(
       key == 'published_at'
@@ -720,9 +771,20 @@ Widget _valueWidget(Map<String, dynamic> item, String key) {
   return Text(value, maxLines: 2, overflow: TextOverflow.ellipsis);
 }
 
-String _value(Map<String, dynamic> item, String key) {
+String _value(
+  Map<String, dynamic> item,
+  String key, [
+  Map<String, Map<int, String>> lookups = const {},
+]) {
   final raw = item[key];
   if (raw == null) return '—';
+  final names = lookups[key];
+  // Never show a bare database id: use the record's name, or "#id".
+  if (raw is num && (names != null || key.endsWith('_id'))) {
+    return names?[raw.toInt()] ?? '#${raw.toInt()}';
+  }
+  if (key == 'auditable_type') return humanizeType(raw.toString());
+  if (key == 'event') return humanizeEvent(raw.toString());
   if (raw is Map)
     return _display(
       Map<String, dynamic>.from(raw),
@@ -732,7 +794,18 @@ String _value(Map<String, dynamic> item, String key) {
           ? 'title'
           : 'score',
     );
-  if (raw is List) return raw.map((value) => value.toString()).join(', ');
+  if (raw is List) {
+    if (raw.isEmpty) return '—';
+    return raw
+        .map(
+          (value) => value is Map
+              ? recordName(value)
+              : value is num && names != null
+              ? names[value.toInt()] ?? '#${value.toInt()}'
+              : value.toString(),
+        )
+        .join(', ');
+  }
   if (key.endsWith('_at')) {
     final date = DateTime.tryParse(raw.toString())?.toLocal();
     if (date != null) return DateFormat('MMM d, y · h:mm a').format(date);

@@ -8,6 +8,7 @@ import '../../core/auth/session_controller.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/network/api_client.dart';
 import '../../shared/app_widgets.dart';
+import '../../shared/formatting.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -544,7 +545,9 @@ class _RecentCard extends StatelessWidget {
       ? Icons.inventory_2_outlined
       : Icons.assignment_outlined;
   String _title(Map<String, dynamic> item) =>
-      item['event']?.toString() ??
+      (item['event'] == null
+          ? null
+          : humanizeEvent(item['event'].toString())) ??
       (item['assignment'] is Map
           ? (item['assignment'] as Map)['title']?.toString()
           : null) ??
