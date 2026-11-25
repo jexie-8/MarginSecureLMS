@@ -18,6 +18,12 @@ return [
     'file_scan_required' => env('FILE_SCAN_REQUIRED', false),
     'file_scan_timeout' => (int) env('FILE_SCAN_TIMEOUT', 30),
 
+    // Decompression-bomb limits for ZIP uploads (.zip, .docx, .xlsx). Checked
+    // from the archive's table of contents, without unpacking it.
+    'archive_max_entries' => (int) env('ARCHIVE_MAX_ENTRIES', 2000),
+    'archive_max_unpacked_mb' => (int) env('ARCHIVE_MAX_UNPACKED_MB', 256),
+    'archive_max_ratio' => (int) env('ARCHIVE_MAX_RATIO', 100),
+
     // Private disk for uploaded files (materials, submissions, avatars). In
     // production this is the encrypted private S3 bucket.
     'files_disk' => env('FILES_DISK', env('FILESYSTEM_DISK', 'local')),

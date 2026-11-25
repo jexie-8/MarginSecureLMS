@@ -37,6 +37,18 @@ class Resp:
 class Client:
     def __init__(self, target='direct', ua=BROWSER_UA, browser=True, origin=ORIGIN):
         self.host, self.port = TARGETS[target]
+        self.https = False
+        self.host_header = f'localhost:{self.port}'
+        # With MARGIN_PUBLIC_URL=https://<tunnel> the 'waf' target goes through the
+        # public tunnel instead (needed while the stack runs in tunnel mode, where
+        # the app treats only the tunnel host as its own site).
+        public = os.environ.get('MARGIN_PUBLIC_URL') if target == 'waf' else None
+        if public:
+            u = urllib.parse.urlsplit(public)
+            self.host, self.port, self.https = u.hostname, u.port or 443, u.scheme == 'https'
+            self.host_header = u.netloc
+            if origin == ORIGIN:
+                origin = f'{u.scheme}://{u.netloc}'
         self.ua = ua
         self.browser = browser
         self.origin = origin
@@ -50,7 +62,7 @@ class Client:
         import time
         # Send the name a browser would use. A bare IP in Host trips CRS rule
         # 920350, which would add noise to every request through the firewall.
-        h = {'Host': f'localhost:{self.port}', 'Accept': 'application/json', 'User-Agent': extra_ua or self.ua}
+        h = {'Host': self.host_header,'Accept': 'application/json', 'User-Agent': extra_ua or self.ua}
         if self.browser:
             h['Origin'] = self.origin
             h['Sec-Fetch-Site'] = 'same-origin'
@@ -83,7 +95,8 @@ class Client:
             for k, v in headers.items():
                 if v is None:
                     h.pop(k, None)
-        conn = http.client.HTTPConnection(self.host, self.port, timeout=timeout)
+        connection = http.client.HTTPSConnection if self.https else http.client.HTTPConnection
+        conn = connection(self.host, self.port, timeout=timeout)
         t0 = time.time()
         try:
             conn.request(method, path, body=body, headers=h)

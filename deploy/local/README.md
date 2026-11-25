@@ -47,7 +47,7 @@ All in `../../docs/security-testing/` (results and the vulnerability log are the
 
 | Test | Command (from this folder) |
 |---|---|
-| Deployed path through the firewall (login, cookies, upload + virus scan, WAF, reset) | `python ../../docs/security-testing/deploy_smoke.py` |
+| Deployed path through the firewall (login, cookies, upload + virus scan, ZIP-bomb refusal, WAF, reset) | `python ../../docs/security-testing/deploy_smoke.py`. While the tunnel is up the app only accepts sessions from the tunnel host, so run it through the tunnel: `$env:MARGIN_PUBLIC_URL='https://<tunnel>'` first |
 | Full OWASP WSTG run | `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d app`, then `python ../../docs/security-testing/run_wstg.py` |
 | Backend regression suite | in `backend/`: `php artisan test -c phpunit.margin.xml` |
 
@@ -58,6 +58,16 @@ The quick tunnel's address changes whenever the tunnel container starts, and the
 1. `./start.ps1` (public), then **leave the tunnel running**.
 2. In `frontend/`: `./scripts/build_android.ps1`. It reads `TUNNEL_HOST` from `.env` and builds `build/app/outputs/flutter-apk/app-release.apk` against `https://<tunnel>`.
 3. Install it on the phone or emulator. If the tunnel restarts, build again.
+
+If the app says "You appear to be offline" while the network works, the quick tunnel has probably gone. Cloudflare gives quick tunnels no uptime guarantee and can delete one, for example after a connection drop. `docker compose logs tunnel` then repeats `Unauthorized: Tunnel not found`, and the old address no longer resolves. The container keeps retrying but never recovers. Fix: `docker compose rm -sf tunnel`, then `./start.ps1` (new address), then build and install the APK again.
+
+**Building in Docker (when Windows blocks the build).** On a PC with Smart App Control, `flutter build apk --release` fails with "An Application Control policy has blocked this file" (`gen_snapshot.exe`). Do not turn Smart App Control off. Build in a Linux container instead, with Docker Desktop running and the tunnel up:
+1. In `frontend/`: `./scripts/build_android.ps1 -Docker`.
+2. The first run builds the image `margin-flutter-android:3.44.7` (`frontend/scripts/android-build.Dockerfile`: the cirruslabs Flutter 3.44.0 image with its SDK moved to 3.44.7, the version used on the PC) and downloads Gradle and packages. That takes a while and several GB. Later runs reuse the image and the `margin-gradle-cache` and `margin-pub-cache` volumes.
+3. The container builds from a copy of `frontend/` (your `.dart_tool` and `local.properties` stay untouched), then checks the signature: it prints `SIGNING OK` only when the APK's certificate matches the keystore in `key.properties`, and fails otherwise.
+4. The APK lands in `frontend/build/app/outputs/flutter-apk/app-release.apk`, and the symbols for reading obfuscated stack traces land in `frontend/build/debug-info/`. Keep the symbols with the APK.
+
+To free the space afterwards: `docker image rm margin-flutter-android:3.44.7 ghcr.io/cirruslabs/flutter:3.44.0` and `docker volume rm margin-gradle-cache margin-pub-cache`.
 
 Release signing: put `upload-keystore.jks` and `key.properties` (`storePassword`, `keyPassword`, `keyAlias`, and `storeFile=../upload-keystore.jks`, a path relative to `android/app`) in `frontend/android/`. Both are git-ignored. Without them, the APK is signed with the debug key (fine for testing only).
 

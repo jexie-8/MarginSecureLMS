@@ -31,7 +31,7 @@
     "wstg": "DEPLOY-COOKIE",
     "title": "Session cookie is HttpOnly, Secure, SameSite=Lax",
     "status": "PASS",
-    "detail": "expires=Wed, 25 Nov 2026 01:15:41 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax",
+    "detail": "expires=Wed, 25 Nov 2026 19:02:26 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax",
     "severity": ""
   },
   {
@@ -67,6 +67,20 @@
     "title": "EICAR test file is refused",
     "status": "PASS",
     "detail": "HTTP 422 {\"message\":\"The file failed its security scan.\",\"errors\":{\"file\":[\"The file failed its security scan.\"]}}",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-UPLOAD",
+    "title": "Ordinary ZIP submission is accepted",
+    "status": "PASS",
+    "detail": "HTTP 201",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-UPLOAD",
+    "title": "ZIP bomb (20 KB unpacking to 20 MB) is refused",
+    "status": "PASS",
+    "detail": "HTTP 422 {\"message\":\"This archive is too large when unpacked.\",\"errors\":{\"file\":[\"This archive is too large when unpacked.\"]}}",
     "severity": ""
   },
   {

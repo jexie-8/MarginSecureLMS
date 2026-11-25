@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:file_picker/file_picker.dart';
 
 import '../../core/app_config.dart';
 import '../../core/app_strings.dart';
@@ -15,6 +14,7 @@ import '../../core/network/api_client.dart';
 import '../../shared/app_widgets.dart';
 import 'resource_catalog.dart';
 import 'resource_repository.dart';
+import 'submit_work.dart';
 
 class ResourcePage extends StatefulWidget {
   const ResourcePage({super.key, required this.section, this.overrideConfig});
@@ -171,7 +171,7 @@ class _ResourcePageState extends State<ResourcePage> {
       'submissions',
       'grades',
     ].contains(endpoint)) {
-      context.go('/detail/$endpoint/${item['id']}');
+      context.push('/detail/$endpoint/${item['id']}');
       return;
     }
     await showDialog<void>(
@@ -273,73 +273,8 @@ class _ResourcePageState extends State<ResourcePage> {
     }
   }
 
-  Future<void> _submitAssignment(Map<String, dynamic> item) async {
-    final api = context.read<ApiClient>();
-    final controller = TextEditingController();
-    final content = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('Submit ${_plain(item['title'])}'),
-        content: SizedBox(
-          width: 520,
-          child: TextField(
-            controller: controller,
-            minLines: 6,
-            maxLines: 12,
-            decoration: const InputDecoration(
-              labelText: 'Written response',
-              alignLabelWithHint: true,
-              helperText:
-                  'Your response is submitted securely to your instructor.',
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Submit work'),
-          ),
-          OutlinedButton.icon(
-            onPressed: () => Navigator.pop(context, '__FILES__'),
-            icon: const Icon(Icons.attach_file),
-            label: const Text('Attach files'),
-          ),
-        ],
-      ),
-    );
-    if (content == null) return;
-    try {
-      if (content == '__FILES__') {
-        final picked = await FilePicker.platform.pickFiles(
-          allowMultiple: true,
-          withData: true,
-        );
-        if (picked == null || picked.files.isEmpty) return;
-        await api.multipart(
-          'POST',
-          '${AppConfig.apiPrefix}/assignments/${item['id']}/submissions',
-          files: [
-            for (final file in picked.files.where((file) => file.bytes != null))
-              UploadPart('files[]', file.name, file.bytes!),
-          ],
-        );
-      } else {
-        if (content.isEmpty) return;
-        await api.post(
-          '${AppConfig.apiPrefix}/assignments/${item['id']}/submissions',
-          body: {'content': content},
-        );
-      }
-      if (mounted) showSuccess(context, 'Assignment submitted successfully.');
-    } catch (e) {
-      if (mounted) showFailure(context, e);
-    }
-  }
+  Future<void> _submitAssignment(Map<String, dynamic> item) =>
+      submitAssignmentWork(context, item);
 
   Future<void> _grade(Map<String, dynamic> item) async {
     final api = context.read<ApiClient>();

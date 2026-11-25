@@ -297,7 +297,7 @@ class _StudentDashboard extends StatelessWidget {
                 itemBuilder: (context, index) => _CourseCard(
                   course: courses[index],
                   onOpen: () =>
-                      context.go('/detail/courses/${courses[index]['id']}'),
+                      context.push('/detail/courses/${courses[index]['id']}'),
                 ),
               );
             },

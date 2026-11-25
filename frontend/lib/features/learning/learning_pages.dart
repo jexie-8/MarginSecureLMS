@@ -1,17 +1,19 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_config.dart';
 import '../../core/auth/session_controller.dart';
 import '../../core/errors/app_exception.dart';
+import '../../core/models/app_user.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/download.dart';
 import '../../shared/app_widgets.dart';
+import '../resources/submit_work.dart';
 
 /// Downloads a protected file (browser: opens it; mobile: fetches and opens it).
 Future<void> _download(BuildContext context, String path) async {
@@ -495,80 +497,476 @@ class _EntityDetailPageState extends State<EntityDetailPage> {
     return {'data': item};
   }
 
+  void _reload() => setState(() => future = _load());
+
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/app/dashboard');
+    }
+  }
+
+  PreferredSizeWidget _bar(String title) => AppBar(
+    leading: BackButton(onPressed: _back),
+    title: Text(title, overflow: TextOverflow.ellipsis),
+  );
+
   @override
   Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(
     future: future,
-    builder: (_, snapshot) {
+    builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return Scaffold(
+          appBar: _bar(''),
+          body: const Center(child: CircularProgressIndicator()),
+        );
       }
       if (snapshot.hasError) {
         final problem = snapshot.error is AppException
             ? snapshot.error! as AppException
             : const AppException('Unable to load this record.');
-        return Scaffold(appBar: AppBar(), body: FeedbackView.error(problem));
+        return Scaffold(
+          appBar: _bar(''),
+          body: FeedbackView.error(problem, onRetry: _reload),
+        );
       }
       final payload = snapshot.data!;
       final item = Map<String, dynamic>.from(
         (payload['data'] as Map?) ?? payload,
       );
+      final user = context.watch<SessionController>().user;
       final title =
-          item['name'] ?? item['title'] ?? '${widget.type} #${widget.id}';
-      final fields = item.entries.where((entry) => entry.value != null);
+          _text(item['name'] ?? item['title']) ?? _typeName(widget.type);
       return Scaffold(
-        appBar: AppBar(title: Text(title.toString())),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+        appBar: _bar(title),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            _reload();
+            await future;
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.toString(),
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const Divider(height: 32),
-                      for (final entry in fields)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 170,
-                                child: Text(
-                                  _label(entry.key),
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: SelectableText(
-                                  _detailValue(entry.value),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: switch (widget.type) {
+                      'courses' => _course(item, user),
+                      'assignments' => _assignment(item, user),
+                      'submissions' => _submission(item, user),
+                      'grades' => _grade(item),
+                      _ => _generic(item),
+                    },
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       );
     },
   );
+
+  // ---- course -------------------------------------------------------------
+  List<Widget> _course(Map<String, dynamic> item, AppUser? user) {
+    final assignments = _list(item['course_assignments']);
+    final summary = _list(item['grade_summary']);
+    final student = user?.isStudent == true;
+    return [
+      _header(
+        eyebrow: _text(item['code']),
+        title: _text(item['name']) ?? 'Course',
+        body: _text(item['description']),
+      ),
+      if (summary.isNotEmpty) ...[
+        _section(student ? 'Your grade' : 'Grade overview'),
+        _gradeSummary(summary, student),
+      ],
+      _section(
+        'Assignments',
+        count: assignments.isEmpty ? null : assignments.length,
+      ),
+      if (assignments.isEmpty)
+        _empty(Icons.assignment_outlined, 'No assignments yet.')
+      else
+        _tiles([
+          for (final assignment in assignments)
+            ListTile(
+              leading: const Icon(Icons.assignment_outlined),
+              title: Text(_text(assignment['title']) ?? 'Assignment'),
+              subtitle: _line([
+                if (_date(assignment['due_at']) case final due?) 'Due $due',
+                if (_number(assignment['max_score']) case final points?)
+                  '$points points',
+              ]),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!student)
+                    StatusBadge(
+                      assignment['published_at'] == null
+                          ? 'Draft'
+                          : 'Published',
+                    ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              onTap: () =>
+                  context.push('/detail/assignments/${assignment['id']}'),
+            ),
+        ]),
+    ];
+  }
+
+  Widget _gradeSummary(List<Map<String, dynamic>> rows, bool student) {
+    if (student) {
+      final row = rows.first;
+      return _tiles([
+        ListTile(
+          leading: const Icon(Icons.grade_outlined),
+          title: Text(_percent(row['percentage'])),
+          subtitle: Text(
+            '${_number(row['earned']) ?? '0'} of '
+            '${_number(row['possible']) ?? '0'} points in published grades',
+          ),
+        ),
+      ]);
+    }
+    final average =
+        rows
+            .map((row) => num.tryParse('${row['percentage']}') ?? 0)
+            .fold<num>(0, (sum, value) => sum + value) /
+        rows.length;
+    return _tiles([
+      ListTile(
+        leading: const Icon(Icons.insights_outlined),
+        title: Text('Average ${_percent(average)}'),
+        subtitle: Text(
+          '${rows.length} student${rows.length == 1 ? '' : 's'} '
+          'with published grades',
+        ),
+      ),
+    ]);
+  }
+
+  // ---- assignment ---------------------------------------------------------
+  List<Widget> _assignment(Map<String, dynamic> item, AppUser? user) {
+    final course = item['course'] is Map ? item['course'] as Map : null;
+    final history = _list(item['submission_history']);
+    final student = user?.isStudent == true;
+    final published = item['published_at'] != null;
+    return [
+      _header(
+        eyebrow: course == null
+            ? null
+            : [
+                _text(course['code']),
+                _text(course['name']),
+              ].whereType<String>().join(' · '),
+        title: _text(item['title']) ?? 'Assignment',
+        body: _text(item['description']),
+        badges: [
+          if (!student) StatusBadge(published ? 'Published' : 'Draft'),
+          if (_isPast(item['due_at'])) const StatusBadge('Past due'),
+        ],
+      ),
+      _facts([
+        (Icons.event_outlined, 'Due', _date(item['due_at'])),
+        (Icons.star_outline, 'Points', _number(item['max_score'])),
+        if (!student)
+          (Icons.publish_outlined, 'Published', _date(item['published_at'])),
+      ]),
+      if (student && published)
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: FilledButton.icon(
+            onPressed: () => _submit(item),
+            icon: const Icon(Icons.upload_file_outlined),
+            label: const Text('Submit work'),
+          ),
+        ),
+      _section(
+        student ? 'Your submissions' : 'Submissions',
+        count: history.isEmpty ? null : history.length,
+      ),
+      if (history.isEmpty)
+        _empty(
+          Icons.inbox_outlined,
+          student
+              ? 'You have not submitted this assignment yet.'
+              : 'No submissions yet.',
+        )
+      else
+        _tiles([
+          for (final submission in history)
+            ListTile(
+              leading: CircleAvatar(
+                child: Text('${submission['attempt_number'] ?? ''}'),
+              ),
+              title: Text(
+                student
+                    ? 'Attempt ${submission['attempt_number'] ?? ''}'
+                    : _text((submission['student'] as Map?)?['name']) ??
+                          'Student',
+              ),
+              subtitle: _line([
+                if (!student) 'Attempt ${submission['attempt_number'] ?? ''}',
+                ?_date(submission['submitted_at']),
+                _filesSummary(submission['files']),
+              ]),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  context.push('/detail/submissions/${submission['id']}'),
+            ),
+        ]),
+    ];
+  }
+
+  Future<void> _submit(Map<String, dynamic> item) async {
+    if (await submitAssignmentWork(context, item) && mounted) _reload();
+  }
+
+  // ---- submission ---------------------------------------------------------
+  List<Widget> _submission(Map<String, dynamic> item, AppUser? user) {
+    final assignment = item['assignment'] is Map
+        ? item['assignment'] as Map
+        : null;
+    final student = item['student'] is Map ? item['student'] as Map : null;
+    final grade = item['grade'] is Map
+        ? Map<String, dynamic>.from(item['grade'] as Map)
+        : null;
+    final files = _list(item['files']);
+    return [
+      _header(
+        eyebrow: _text(assignment?['title']),
+        title: 'Attempt ${item['attempt_number'] ?? ''}'.trim(),
+        badges: [StatusBadge(grade == null ? 'Grade pending' : 'Graded')],
+      ),
+      _facts([
+        if (user?.isStudent != true)
+          (Icons.person_outline, 'Student', _text(student?['name'])),
+        (Icons.schedule_outlined, 'Submitted', _date(item['submitted_at'])),
+        (Icons.star_outline, 'Points', _number(assignment?['max_score'])),
+      ]),
+      if (_text(item['content']) case final content?) ...[
+        _section('Response'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SelectableText(content),
+          ),
+        ),
+      ],
+      _section('Files', count: files.isEmpty ? null : files.length),
+      if (files.isEmpty)
+        _empty(Icons.attach_file, 'No files attached.')
+      else
+        _tiles([
+          for (final file in files)
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file_outlined),
+              title: Text(
+                _text(file['name']) ?? 'File',
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(_fileSize(file['size'])),
+              trailing: IconButton(
+                tooltip: 'Download',
+                icon: const Icon(Icons.download_outlined),
+                onPressed: () => _download(
+                  context,
+                  '${AppConfig.apiPrefix}/submission-files/${file['id']}/download',
+                ),
+              ),
+            ),
+        ]),
+      if (grade != null) ...[
+        _section('Grade'),
+        _gradeTile(grade, assignment?['max_score']),
+      ],
+    ];
+  }
+
+  Widget _gradeTile(Map<String, dynamic> grade, dynamic maxScore) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            [
+              _number(grade['score']) ?? '—',
+              if (_number(maxScore) case final max?) '/ $max',
+            ].join(' '),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          if (_text(grade['feedback']) case final feedback?) ...[
+            const SizedBox(height: 8),
+            SelectableText(feedback),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  // ---- grade --------------------------------------------------------------
+  List<Widget> _grade(Map<String, dynamic> item) => [
+    _header(
+      eyebrow: 'Grade',
+      title: '${_number(item['score']) ?? '—'} points',
+      badges: [
+        StatusBadge(item['published_at'] == null ? 'Draft' : 'Published'),
+      ],
+    ),
+    _facts([
+      (Icons.publish_outlined, 'Published', _date(item['published_at'])),
+    ]),
+    if (_text(item['feedback']) case final feedback?) ...[
+      _section('Feedback'),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SelectableText(feedback),
+        ),
+      ),
+    ],
+    if (item['submission_id'] != null)
+      Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: OutlinedButton.icon(
+          onPressed: () =>
+              context.push('/detail/submissions/${item['submission_id']}'),
+          icon: const Icon(Icons.description_outlined),
+          label: const Text('View submission'),
+        ),
+      ),
+  ];
+
+  // Anything else: plain fields only, never ids or nested data.
+  List<Widget> _generic(Map<String, dynamic> item) => [
+    _header(title: _text(item['name'] ?? item['title']) ?? 'Details'),
+    _facts([
+      for (final entry in item.entries)
+        if (entry.value is! Map &&
+            entry.value is! List &&
+            entry.key != 'id' &&
+            !entry.key.endsWith('_id') &&
+            !entry.key.endsWith('_by'))
+          (
+            Icons.label_outline,
+            _label(entry.key),
+            _date(entry.value) ?? _text(entry.value),
+          ),
+    ]),
+  ];
+
+  // ---- building blocks ----------------------------------------------------
+  Widget _header({
+    required String title,
+    String? eyebrow,
+    String? body,
+    List<Widget> badges = const [],
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (eyebrow != null && eyebrow.isNotEmpty) ...[
+              Text(
+                eyebrow,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
+            Text(
+              title,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (badges.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: badges),
+            ],
+            if (body != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                body,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _facts(List<(IconData, String, String?)> rows) {
+    final shown = rows.where((row) => row.$3 != null).toList();
+    if (shown.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: _tiles([
+        for (final (icon, label, value) in shown)
+          ListTile(
+            leading: Icon(icon),
+            title: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            subtitle: Text(value!, style: theme.textTheme.bodyLarge),
+          ),
+      ]),
+    );
+  }
+
+  Widget _section(String title, {int? count}) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
+    child: Text(
+      count == null ? title : '$title ($count)',
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    ),
+  );
+
+  Widget _tiles(List<Widget> tiles) => Card(
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      children: [
+        for (var i = 0; i < tiles.length; i++) ...[
+          if (i > 0) const Divider(height: 1),
+          tiles[i],
+        ],
+      ],
+    ),
+  );
+
+  Widget _empty(IconData icon, String message) =>
+      _tiles([ListTile(leading: Icon(icon), title: Text(message))]);
+}
+
+Widget? _line(List<String> parts) {
+  final text = parts.where((part) => part.isNotEmpty).join(' · ');
+  return text.isEmpty ? null : Text(text);
 }
 
 class _DataTools extends StatefulWidget {
@@ -1099,12 +1497,65 @@ String _label(String key) => key
     )
     .join(' ');
 
-String _detailValue(dynamic value) {
-  if (value is Map || value is List) {
-    return const JsonEncoder.withIndent('  ').convert(value);
-  }
-  final date = DateTime.tryParse(value.toString())?.toLocal();
-  return date == null
-      ? value.toString()
-      : DateFormat('MMM d, y · h:mm a').format(date);
+String _typeName(String type) => switch (type) {
+  'courses' => 'Course',
+  'assignments' => 'Assignment',
+  'submissions' => 'Submission',
+  'grades' => 'Grade',
+  _ => 'Details',
+};
+
+String? _text(dynamic value) {
+  if (value == null || value is Map || value is List) return null;
+  final text = value.toString().trim();
+  return text.isEmpty ? null : text;
 }
+
+DateTime? _parseDate(dynamic value) {
+  final text = _text(value);
+  // Only ISO timestamps from the API, not plain numbers or words.
+  if (text == null || !RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(text)) {
+    return null;
+  }
+  return DateTime.tryParse(text)?.toLocal();
+}
+
+String? _date(dynamic value) {
+  final date = _parseDate(value);
+  return date == null ? null : DateFormat('MMM d, y · h:mm a').format(date);
+}
+
+bool _isPast(dynamic value) =>
+    _parseDate(value)?.isBefore(DateTime.now()) ?? false;
+
+String? _number(dynamic value) {
+  final number = num.tryParse('${value ?? ''}');
+  if (number == null) return null;
+  if (number == number.roundToDouble()) return number.toInt().toString();
+  return number
+      .toStringAsFixed(2)
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}
+
+String _percent(dynamic value) => '${_number(value) ?? '0'}%';
+
+String _fileSize(dynamic value) {
+  final bytes = num.tryParse('${value ?? ''}');
+  if (bytes == null) return '';
+  if (bytes < 1024) return '${bytes.toInt()} B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
+String _filesSummary(dynamic files) {
+  final count = files is List ? files.length : 0;
+  return count == 0 ? '' : '$count file${count == 1 ? '' : 's'}';
+}
+
+List<Map<String, dynamic>> _list(dynamic value) => value is List
+    ? value
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList()
+    : const [];
