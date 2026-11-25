@@ -29,6 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
             $middleware->trustProxies(at: $trustedProxies);
         }
 
+        // This is an API: an anonymous request gets a 401, never a redirect to a
+        // login page that does not exist (which used to surface as a 500).
+        $middleware->redirectGuestsTo(fn () => null);
+
+        // Route-model binding runs queries. With Row-Level Security those queries
+        // only see the user's rows once the database knows who is asking, so the
+        // context must be set BEFORE bindings are resolved.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            prepend: \App\Http\Middleware\SetDatabaseUserContext::class,
+        );
+
         $middleware->statefulApi();
         $middleware->appendToGroup('api', [
             RequireBrowserContext::class,
@@ -51,6 +63,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $isApi = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
         $exceptions->render(fn (ModelNotFoundException|NotFoundHttpException $e, Request $request) => $isApi($request)
             ? response()->json(['message' => 'Not found.'], 404)
+            : null);
+        // Malformed input that reaches the database as the wrong type or size
+        // (SQLSTATE class 22) is a client mistake, not a server fault.
+        $exceptions->render(fn (\Illuminate\Database\QueryException $e, Request $request) => $isApi($request) && str_starts_with((string) $e->getCode(), '22')
+            ? response()->json(['message' => 'Invalid input.'], 422)
             : null);
         $exceptions->render(fn (MethodNotAllowedHttpException $e, Request $request) => $isApi($request)
             ? response()->json(['message' => 'Method not allowed.'], 405)

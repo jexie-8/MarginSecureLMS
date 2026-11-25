@@ -1,0 +1,9 @@
+# TESTING ONLY. Publishes the application container on loopback so security
+# tests can reach it without the web application firewall, to prove the
+# application defends itself too. Never use this for a public deployment.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d app
+services:
+  app:
+    ports:
+      - "127.0.0.1:8089:8080"

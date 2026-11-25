@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/browser_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:web/web.dart' as web;
@@ -16,7 +17,11 @@ String? readCookie(String name) {
   return null;
 }
 
-String get defaultApiOrigin => 'http://localhost:8000';
+/// A release build is served by the same host as the API (the web server
+/// forwards /api to the backend), so it talks to its own origin. Cookies then
+/// stay first-party, and nothing needs rebuilding when the host changes.
+String get defaultApiOrigin =>
+    kReleaseMode ? Uri.base.origin : 'http://localhost:8000';
 
 String get deviceName => 'web';
 

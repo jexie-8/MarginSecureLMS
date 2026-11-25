@@ -1,0 +1,56 @@
+# Database checks on the local Docker stack, 2026-11-24T23:11Z
+
+## Published ports (db has none)
+app  8080/tcp, 9000/tcp
+db  5432/tcp
+scheduler  8080/tcp, 9000/tcp
+waf  127.0.0.1:8088->8080/tcp
+worker  8080/tcp, 9000/tcp
+
+## Host port 5432
+True
+Note: the listener is NOT the Docker database. It is a separate PostgreSQL
+installed directly on Windows (process "postgres", listening on 0.0.0.0:5432
+and [::]:5432), used for development with `php artisan serve`. The Docker
+database publishes no port (see above) and is reachable only on the private
+Docker network. Recommendation: set listen_addresses = 'localhost' in that
+installation's postgresql.conf, or stop its Windows service during the demo.
+
+## Roles
+    rolname     | rolsuper | rolbypassrls 
+----------------+----------+--------------
+ margin_app     | f        | f
+ margin_owner   | f        | f
+ margin_runtime | f        | f
+(3 rows)
+
+## Tables with Row-Level Security
+     relname     | relrowsecurity | relforcerowsecurity 
+-----------------+----------------+---------------------
+ grade_revisions | t              | t
+ grades          | t              | t
+ submissions     | t              | t
+(3 rows)
+
+## Plaintext connection attempt
+psql: error: connection to server at "db" (172.18.0.5), port 5432 failed: FATAL:  pg_hba.conf rejects connection for host "172.18.0.5", user "margin_runtime", database "margin_db", no encryption
+
+## As margin_runtime from the app container (verify-full TLS)
+current_user: margin_runtime
+pg_stat_ssl (ssl, version, cipher): [true,"TLSv1.3","TLS_AES_256_GCM_SHA384"]
+submissions visible with no user context: 0
+grades visible with no user context: 0
+as student 6 -> [rows, distinct students, student id]: [6,1,6]
+UPDATE submissions: SQLSTATE[42501]: Insufficient privilege: 7 ERROR:  permission denied for table submissions
+
+## Superuser view of the same table
+8|2
+
+## Wrong CA is refused
+refused: SQLSTATE[08006] [7] connection to server at "db" (172.18.0.5), port 5432 failed: SSL error: certificate verify failed
+
+## Addendum 2026-11-25T17:55 (local time, GMT+2): Windows PostgreSQL restricted (V-08 fixed)
+listen_addresses = 'localhost' in C:\Program Files\PostgreSQL\18\data\postgresql.conf, service restarted.
+Listeners on port 5432 now:
+  ::1:5432
+  127.0.0.1:5432

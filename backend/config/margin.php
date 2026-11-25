@@ -3,6 +3,18 @@
 return [
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
     'clamav_command' => env('CLAMAV_COMMAND'),
+
+    // Password for the demonstration accounts created by the local seeder.
+    'seed_admin_password' => env('MARGIN_SEED_ADMIN_PASSWORD'),
+
+    // When set, every outgoing email is delivered to this one address instead
+    // of its real recipient. For demonstrations where accounts use made-up
+    // addresses. Leave empty in a real deployment.
+    'mail_always_to' => env('MAIL_ALWAYS_TO'),
+
+    // Behind a proxy or tunnel the request host is an internal name. When true,
+    // every generated link uses APP_URL, the address users actually see.
+    'force_root_url' => (bool) env('FORCE_ROOT_URL', false),
     'file_scan_required' => env('FILE_SCAN_REQUIRED', false),
     'file_scan_timeout' => (int) env('FILE_SCAN_TIMEOUT', 30),
 

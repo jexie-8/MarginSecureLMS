@@ -22,6 +22,7 @@ class SubmissionController extends Controller
         Gate::authorize('viewAny', Submission::class);
         $actor = $request->user();
         $query = Submission::query()->with(['assignment.course', 'student', 'grade', 'files'])->latest('submitted_at')->orderByDesc('id');
+        $request->validate(['assignment_id' => ['nullable', 'integer', 'between:1,2147483647']]);
         $request->whenFilled('assignment_id', fn (int $assignmentId) => $query->where('assignment_id', $assignmentId));
         if ($actor->role === 'student') {
             $query->where('student_id', $actor->id);

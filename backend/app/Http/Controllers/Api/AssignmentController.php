@@ -18,6 +18,7 @@ class AssignmentController extends Controller
         Gate::authorize('viewAny', Assignment::class);
         $actor = $request->user();
         $query = Assignment::query()->with('course')->latest('created_at')->orderByDesc('id');
+        $request->validate(['course_id' => ['nullable', 'integer', 'between:1,2147483647']]);
         $request->whenFilled('course_id', fn (int $courseId) => $query->where('course_id', $courseId));
         if ($actor->role === 'student') {
             $query->whereNotNull('published_at')->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $actor->id)->where('status', 'active'));

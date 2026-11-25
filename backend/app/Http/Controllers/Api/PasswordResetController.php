@@ -20,7 +20,13 @@ class PasswordResetController extends Controller
         $data = $request->validate(['email' => ['required', 'email']]);
         $activeUserExists = User::query()->where('email', $data['email'])->where('account_status', 'active')->exists();
         if ($activeUserExists) {
-            Password::broker()->sendResetLink(['email' => $data['email']]);
+            try {
+                Password::broker()->sendResetLink(['email' => $data['email']]);
+            } catch (\Throwable $e) {
+                // A mail outage must not change the answer: a different response
+                // would tell an attacker which addresses have accounts.
+                report($e);
+            }
         }
 
         return response()->json([

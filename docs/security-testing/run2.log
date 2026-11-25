@@ -1,0 +1,206 @@
+
+=== info_conf ===
+[ok  ] WSTG-INFO-02   No framework/version in headers (X-Powered-By, nginx version)
+[ok  ] WSTG-CONF-04   Sensitive path /.env not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /.git/config not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /vendor/autoload.php not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /storage/logs/laravel.log not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /composer.json not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /artisan not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /phpinfo.php not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /server-status not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /telescope not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /horizon not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /_ignition/health-check not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /backup.zip not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /database/database.sqlite not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /storage/app/private/ not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /.DS_Store not exposed
+[ok  ] WSTG-CONF-04   Sensitive path /config/app.php not exposed
+[ok  ] WSTG-CONF-06   HTTP TRACE on / is not accepted
+[ok  ] WSTG-CONF-06   HTTP PUT on / is not accepted
+[ok  ] WSTG-CONF-06   HTTP DELETE on / is not accepted
+[ok  ] WSTG-CONF-06   HTTP PATCH on / is not accepted
+[ok  ] WSTG-CONF-06   HTTP CONNECT on / is not accepted
+[ok  ] WSTG-CONF-06   OPTIONS on the API does not reveal extra methods
+[ok  ] WSTG-CONF-07   Static site sends strict-transport-security
+[ok  ] WSTG-CONF-07   Static site sends x-content-type-options
+[ok  ] WSTG-CONF-07   Static site sends x-frame-options
+[ok  ] WSTG-CONF-07   Static site sends referrer-policy
+[ok  ] WSTG-CONF-07   Static site sends content-security-policy
+[ok  ] WSTG-CLNT-12   Page declares a CSP without unsafe-inline for scripts / unsafe-eval
+[ok  ] WSTG-CONF-07   API sends x-content-type-options
+[ok  ] WSTG-CONF-07   API sends x-frame-options
+[ok  ] WSTG-CONF-07   API sends content-security-policy
+[ok  ] WSTG-CONF-07   API sends referrer-policy
+[ok  ] WSTG-CONF-07   API sends cache-control
+[ok  ] WSTG-ATHN-06   Authenticated API responses are not cacheable
+[ok  ] WSTG-ERRH-01   Error for unknown route is generic
+[ok  ] WSTG-ERRH-01   Error for wrong method is generic
+[ok  ] WSTG-ERRH-01   Error for malformed JSON is generic
+[ok  ] WSTG-ERRH-01   Error for huge integer id is generic
+[ok  ] WSTG-ERRH-01   Error for string where int expected is generic
+[ok  ] WSTG-ERRH-01   Error for array where string expected is generic
+
+=== sessions ===
+[ok  ] WSTG-SESS-03   Session identifier changes at login (no fixation)
+[ok  ] WSTG-SESS-02   Session cookie is HttpOnly, Secure and SameSite
+[ok  ] WSTG-SESS-02   CSRF cookie is Secure and SameSite (readable by the app on purpose)
+[ok  ] WSTG-SESS-01   Session cookies are unique and long (15 samples)
+[ok  ] WSTG-SESS-05   State-changing request with a session but no CSRF token and no browser headers is refused
+[info] WSTG-SESS-05   Same-origin browser header counts as proof of origin (Laravel 13)  -> HTTP 200: a page on another site cannot set Sec-Fetch-Site, so it cannot use this
+[ok  ] WSTG-SESS-05   Cross-site request with a valid session is refused
+[ok  ] WSTG-SESS-05   Cross-site GET with a valid session is refused
+[info] WSTG-SESS-05   Session request with no Origin/Sec-Fetch-Site headers (curl-style)  -> HTTP 401 (script tools can omit headers; the server still authorizes every request)
+[ok  ] WSTG-SESS-09   Stolen session cookie fails from a different client (User-Agent binding)
+[ok  ] WSTG-SESS-06   Session cannot be replayed after logout
+[info] WSTG-SESS-07   Idle (120 min) and absolute (12 h) timeouts  -> covered by AccountProtectionGapsTest (clock-travel tests); not waited out here
+[ok  ] WSTG-ATHZ-04   A user cannot revoke another user's session
+[ok  ] WSTG-SESS-01   Mobile sign-in issues a bearer token
+[ok  ] WSTG-SESS-01   Bearer token authenticates API calls
+[ok  ] WSTG-SESS-06   Bearer token stops working after mobile logout
+
+=== authorization ===
+[ok  ] WSTG-ATHZ-02   Student cannot reach staff/admin endpoints
+[ok  ] WSTG-ATHZ-02   Lecturer cannot reach user/audit/university administration
+[ok  ] WSTG-ATHZ-02   Department admin cannot create universities
+[ok  ] WSTG-ATHZ-03   Profile update ignores role/university fields (mass assignment)
+[ok  ] WSTG-ATHZ-03   Student cannot change own role through /users/{id}
+[ok  ] WSTG-ATHZ-03   Department admin cannot create a platform admin
+[ok  ] WSTG-ATHZ-03   University admin cannot create a platform admin
+[ok  ] WSTG-ATHZ-03   University admin cannot create users in another university
+[ok  ] WSTG-ATHZ-04   Tenant A users cannot read tenant B courses/assignments (IDOR by id)
+[ok  ] WSTG-ATHZ-04   Tenant B users cannot read tenant A courses/users/grades (IDOR by id)
+[ok  ] WSTG-ATHZ-04   List and search endpoints never mix universities
+[ok  ] WSTG-ATHZ-04   Student only sees courses they are enrolled in
+[ok  ] WSTG-ATHZ-04   Student cannot read an assignment of a course they are not enrolled in
+[ok  ] WSTG-BUSL-01   Student cannot submit to a course they are not enrolled in
+[ok  ] WSTG-BUSL-01   Enrolled student can submit work
+[ok  ] WSTG-ATHZ-04   Submission visible to other student in same course: False
+[ok  ] WSTG-ATHZ-04   Submission visible to student of other university: False
+[ok  ] WSTG-ATHZ-04   Submission visible to lecturer of other university: False
+[ok  ] WSTG-ATHZ-04   Submission visible to owner: True
+[ok  ] WSTG-ATHZ-04   Submission visible to course lecturer: True
+[ok  ] WSTG-ATHZ-02   Student cannot grade (own) submission
+[ok  ] WSTG-ATHZ-04   Lecturer of another university cannot grade it
+[ok  ] WSTG-BUSL-03   Score above the maximum is rejected
+[ok  ] WSTG-BUSL-03   Negative score is rejected
+[ok  ] WSTG-INPV-20   Non-numeric score is rejected
+[ok  ] WSTG-BUSL-03   Course lecturer can grade
+[ok  ] WSTG-BUSL-03   Student cannot see a grade before it is published
+[ok  ] WSTG-ATHZ-02   Student cannot publish a grade
+[ok  ] WSTG-ATHZ-04   Another student cannot read a grade by id
+[ok  ] WSTG-ATHZ-04   Other-university lecturer cannot read the grade
+[ok  ] WSTG-INPV-01   Feedback with markup is returned only as JSON with nosniff
+[info] WSTG-INPV-01   Feedback markup stored as  -> stored verbatim (by design for long text; Flutter renders text, not HTML; CSP blocks scripts)
+[ok  ] WSTG-BUSL-03   Changing a published grade requires a reason
+[ok  ] WSTG-ATHZ-01   Path traversal /materials/..%2f..%2f.env/download
+[ok  ] WSTG-ATHZ-01   Path traversal /submission-files/..%2f..%2f.env/download
+[ok  ] WSTG-ATHZ-01   Path traversal /profile/avatar/..%2f..%2f.env
+[ok  ] WSTG-ATHZ-01   Path traversal /materials/1%00/download
+[ok  ] WSTG-ATHZ-01   Path traversal /submission-files/../../../etc/passwd/download
+
+=== input_validation ===
+[ok  ] WSTG-INPV-05   SQL injection payloads in query strings: no errors
+[ok  ] WSTG-INPV-05   SQL injection time-based payload does not delay responses
+[ok  ] WSTG-INPV-05   SQL injection payload in JSON body is stored as text only
+[ok  ] WSTG-INPV-05   Users table still intact after injection attempts
+[ok  ] WSTG-INPV-04   Odd parameter /courses?sort=id;select%20pg_sleep(4) handled safely
+[ok  ] WSTG-INPV-04   Odd parameter /users?per_page=1000000 handled safely
+[ok  ] WSTG-INPV-04   Odd parameter /users?page=-1 handled safely
+[ok  ] WSTG-INPV-04   Odd parameter /users?page[]=1 handled safely
+[ok  ] WSTG-INPV-04   Odd parameter /users?per_page=abc handled safely
+[ok  ] WSTG-INPV-04   Odd parameter /courses?filter[id]=1 handled safely
+[ok  ] WSTG-INPV-04   per_page is capped (no unbounded list)
+[ok  ] WSTG-INPV-02   Stored XSS payload <script>alert(1)</scri returned as inert JSON text
+[info] WSTG-INPV-02   Payload <script>alert(1)</scri stored as  -> stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)
+[ok  ] WSTG-INPV-02   Stored XSS payload "><img src=x onerror=a returned as inert JSON text
+[info] WSTG-INPV-02   Payload "><img src=x onerror=a stored as  -> stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)
+[ok  ] WSTG-INPV-02   Stored XSS payload javascript:alert(1) returned as inert JSON text
+[info] WSTG-INPV-02   Payload javascript:alert(1) stored as  -> stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)
+[ok  ] WSTG-INPV-02   Stored XSS payload <svg/onload=alert(1)> returned as inert JSON text
+[info] WSTG-INPV-02   Payload <svg/onload=alert(1)> stored as  -> stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)
+[ok  ] WSTG-INPV-01   Reflected XSS: search term is not echoed into HTML
+[ok  ] WSTG-INPV-01   Reflected XSS: static pages do not echo query strings
+[ok  ] WSTG-INPV-17   Host header injection: response links do not use an attacker host
+[ok  ] WSTG-INPV-17   X-Forwarded-Host from a client is ignored
+[ok  ] WSTG-INPV-15   CRLF in a parameter does not inject headers
+[ok  ] WSTG-INPV-20   Oversized field is rejected by validation (not 500)
+[ok  ] WSTG-INPV-20   Deeply nested JSON handled without a server error
+[ok  ] WSTG-INPV-20   12 MB body rejected at the edge
+[ok  ] WSTG-INPV-20   Control and bidi characters are stripped from names
+[ok  ] WSTG-BUSL-08   Upload refused - avatar: PHP disguised as PNG
+[ok  ] WSTG-BUSL-08   Upload refused - avatar: HTML as PNG
+[ok  ] WSTG-BUSL-08   Upload refused - avatar: SVG with script
+[ok  ] WSTG-BUSL-08   Upload refused - avatar: EICAR virus
+[ok  ] WSTG-BUSL-08   Upload refused - avatar: oversized (5 MB)
+[ok  ] WSTG-BUSL-09   A genuine small PNG avatar is accepted
+[ok  ] WSTG-BUSL-09   Virus-containing submission file is refused
+[info] WSTG-BUSL-09   Submission with path-traversal file name  -> HTTP 201
+[ok  ] WSTG-BUSL-08   Stored file name does not keep the traversal path
+[ok  ] WSTG-BUSL-09   Lecturer can upload a course material
+[ok  ] WSTG-ATHZ-04   Other-university lecturer cannot upload to our course
+[ok  ] WSTG-ATHZ-02   Student cannot upload course materials
+[ok  ] WSTG-ATHZ-04   Enrolled student downloads the material with safe headers
+[ok  ] WSTG-ATHZ-04   Student of another university cannot download it
+[ok  ] WSTG-ATHZ-04   Anonymous cannot download it
+[info] WSTG-INPV-18   CSV formula injection (=cmd) in imported names  -> exported CSV: check manually if names reach exports
+
+=== client_side_and_limits ===
+[ok  ] WSTG-CLNT-07   CORS: Origin https://evil.example is not granted access
+[ok  ] WSTG-CLNT-07   CORS: Origin null is not granted access
+[ok  ] WSTG-CLNT-07   CORS: Origin http://localhost:8088.evil.example is not granted access
+[ok  ] WSTG-CLNT-07   CORS: the real site origin is allowed and not wildcarded
+[ok  ] WSTG-CLNT-09   Site cannot be framed (X-Frame-Options + frame-ancestors)
+[ok  ] WSTG-APIT-02   API throttle (120/min) returns 429 under a burst of 130 requests
+[info] WSTG-APIT-02   /me burst of 60 requests  -> {429} (note: /me has no per-route throttle in margin_auth.php)
+
+=== waf ===
+[ok  ] WAF            Firewall blocks: SQL injection in query
+[ok  ] WAF            Firewall blocks: UNION SELECT
+[ok  ] WAF            Firewall blocks: XSS in query
+[ok  ] WAF            Firewall blocks: path traversal
+[ok  ] WAF            Firewall blocks: LFI php wrapper
+[ok  ] WAF            Firewall blocks: command injection
+[ok  ] WAF            Firewall blocks: Log4Shell probe
+[ok  ] WAF            Firewall blocks scanner user-agent sqlmap/1.7.2
+[ok  ] WAF            Firewall blocks scanner user-agent Nikto/2.5.0
+[ok  ] WAF            Firewall blocks scanner user-agent Mozilla/5.0 (compa
+[ok  ] WAF            Firewall blocks scanner user-agent masscan/1.3
+[ok  ] WAF            Firewall blocks scanner user-agent zgrab/0.x
+[ok  ] WAF            Normal login passes the firewall
+[ok  ] WAF            Names with apostrophes, hyphens, parentheses and ampersands are not blocked
+[info] WAF            A name containing SQL keywords in parentheses  -> HTTP 200 (the firewall may treat SQL-looking text as an attack: accepted trade-off at paranoia level 1)
+[ok  ] WAF            A genuine image upload passes the firewall
+[ok  ] WAF            Coursework text containing SQL/HTML words is not blocked
+[ok  ] WAF            Same SQL payload straight at the app (no firewall) is harmless
+
+=== infrastructure ===
+[ok  ] WSTG-CRYP-03   App-to-database connections use TLS
+[ok  ] WSTG-CONF-01   Database port is not published on the host
+[ok  ] WSTG-CONF-01   Runtime DB account is neither superuser nor RLS-bypassing
+[ok  ] WSTG-ERRH-01   APP_DEBUG=false and APP_ENV=production in the running container
+[ok  ] WSTG-CONF-03   Secret .env files are not tracked by git
+[info] WSTG-CRYP-01   TLS between browser and site  -> provided by the Cloudflare tunnel once public; not testable on http://localhost
+
+=== identity_authn ===
+[ok  ] WSTG-IDNT-04   Wrong password and unknown user give the same response
+[ok  ] WSTG-IDNT-04   Login timing does not reveal whether an account exists (median of 8)
+[ok  ] WSTG-IDNT-04   Forgot-password response is identical for known and unknown addresses
+[ok  ] WSTG-ATHN-02   Default/guessable credential admin@margin.test / admin rejected
+[ok  ] WSTG-ATHN-02   Default/guessable credential admin@margin.test / Local-Only-ChangeMe!123 rejected
+[ok  ] WSTG-ATHN-02   Default/guessable credential student@margin.test / password rejected
+[ok  ] WSTG-ATHN-02   Default/guessable credential lecturer@margin.test / Password123! rejected
+[ok  ] WSTG-ATHN-04   All 71 authenticated routes reject anonymous requests
+[ok  ] WSTG-ATHN-07   Weak password refused (too short)
+[ok  ] WSTG-ATHN-07   Weak password refused (no upper case)
+[ok  ] WSTG-ATHN-07   Weak password refused (no digit)
+[ok  ] WSTG-ATHN-07   Weak password refused (no symbol)
+[ok  ] WSTG-ATHN-07   Weak password refused (breached/common)
+[ok  ] WSTG-ATHN-09   Changing the password requires the current password
+[ok  ] WSTG-ATHN-09   Password reset with a forged token is refused
+[ok  ] WSTG-ATHN-03   MFA challenge is rate limited (429 within 8 attempts)
+[ok  ] WSTG-ATHN-03   Repeated failed logins trigger a lockout (429)
+[ok  ] WSTG-ATHN-03   While locked, even the right password is refused
+
+188 checks: 175 pass, 0 fail, 13 info

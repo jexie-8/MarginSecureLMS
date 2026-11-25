@@ -1,0 +1,1318 @@
+[
+ {
+  "wstg": "WSTG-INFO-02",
+  "title": "No framework/version in headers (X-Powered-By, nginx version)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /.env not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /.git/config not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /vendor/autoload.php not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /storage/logs/laravel.log not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /composer.json not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /artisan not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /phpinfo.php not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /server-status not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /telescope not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /horizon not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /_ignition/health-check not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /backup.zip not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /database/database.sqlite not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /storage/app/private/ not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /.DS_Store not exposed",
+  "status": "PASS",
+  "detail": "HTTP 403",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-04",
+  "title": "Sensitive path /config/app.php not exposed",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "HTTP TRACE on / is not accepted",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "HTTP PUT on / is not accepted",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "HTTP DELETE on / is not accepted",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "HTTP PATCH on / is not accepted",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "HTTP CONNECT on / is not accepted",
+  "status": "PASS",
+  "detail": "HTTP 400",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-06",
+  "title": "OPTIONS on the API does not reveal extra methods",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "Static site sends strict-transport-security",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "Static site sends x-content-type-options",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "Static site sends x-frame-options",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "Static site sends referrer-policy",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "Static site sends content-security-policy",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-12",
+  "title": "Page declares a CSP without unsafe-inline for scripts / unsafe-eval",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "API sends x-content-type-options",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "API sends x-frame-options",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "API sends content-security-policy",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "API sends referrer-policy",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-07",
+  "title": "API sends cache-control",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-06",
+  "title": "Authenticated API responses are not cacheable",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for unknown route is generic",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for wrong method is generic",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for malformed JSON is generic",
+  "status": "PASS",
+  "detail": "HTTP 405",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for huge integer id is generic",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for string where int expected is generic",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "Error for array where string expected is generic",
+  "status": "PASS",
+  "detail": "HTTP 422",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-03",
+  "title": "Session identifier changes at login (no fixation)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-02",
+  "title": "Session cookie is HttpOnly, Secure and SameSite",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-02",
+  "title": "CSRF cookie is Secure and SameSite (readable by the app on purpose)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-01",
+  "title": "Session cookies are unique and long (15 samples)",
+  "status": "PASS",
+  "detail": "unique, length >= 342 (encrypted)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-05",
+  "title": "State-changing request with a session but no CSRF token and no browser headers is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-05",
+  "title": "Same-origin browser header counts as proof of origin (Laravel 13)",
+  "status": "INFO",
+  "detail": "HTTP 200: a page on another site cannot set Sec-Fetch-Site, so it cannot use this",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-05",
+  "title": "Cross-site request with a valid session is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-05",
+  "title": "Cross-site GET with a valid session is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-05",
+  "title": "Session request with no Origin/Sec-Fetch-Site headers (curl-style)",
+  "status": "INFO",
+  "detail": "HTTP 401 (script tools can omit headers; the server still authorizes every request)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-09",
+  "title": "Stolen session cookie fails from a different client (User-Agent binding)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-06",
+  "title": "Session cannot be replayed after logout",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-07",
+  "title": "Idle (120 min) and absolute (12 h) timeouts",
+  "status": "INFO",
+  "detail": "covered by AccountProtectionGapsTest (clock-travel tests); not waited out here",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "A user cannot revoke another user's session",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-01",
+  "title": "Mobile sign-in issues a bearer token",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-01",
+  "title": "Bearer token authenticates API calls",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-SESS-06",
+  "title": "Bearer token stops working after mobile logout",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Student cannot reach staff/admin endpoints",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Lecturer cannot reach user/audit/university administration",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Department admin cannot create universities",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-03",
+  "title": "Profile update ignores role/university fields (mass assignment)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-03",
+  "title": "Student cannot change own role through /users/{id}",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-03",
+  "title": "Department admin cannot create a platform admin",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-03",
+  "title": "University admin cannot create a platform admin",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-03",
+  "title": "University admin cannot create users in another university",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Tenant A users cannot read tenant B courses/assignments (IDOR by id)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Tenant B users cannot read tenant A courses/users/grades (IDOR by id)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "List and search endpoints never mix universities",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Student only sees courses they are enrolled in",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Student cannot read an assignment of a course they are not enrolled in",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-01",
+  "title": "Student cannot submit to a course they are not enrolled in",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-01",
+  "title": "Enrolled student can submit work",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Submission visible to other student in same course: False",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Submission visible to student of other university: False",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Submission visible to lecturer of other university: False",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Submission visible to owner: True",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Submission visible to course lecturer: True",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Student cannot grade (own) submission",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Lecturer of another university cannot grade it",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-03",
+  "title": "Score above the maximum is rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-03",
+  "title": "Negative score is rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-20",
+  "title": "Non-numeric score is rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-03",
+  "title": "Course lecturer can grade",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-03",
+  "title": "Student cannot see a grade before it is published",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Student cannot publish a grade",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Another student cannot read a grade by id",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Other-university lecturer cannot read the grade",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-01",
+  "title": "Feedback with markup is returned only as JSON with nosniff",
+  "status": "PASS",
+  "detail": "application/json",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-01",
+  "title": "Feedback markup stored as",
+  "status": "INFO",
+  "detail": "stored verbatim (by design for long text; Flutter renders text, not HTML; CSP blocks scripts)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-03",
+  "title": "Changing a published grade requires a reason",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-01",
+  "title": "Path traversal /materials/..%2f..%2f.env/download",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-01",
+  "title": "Path traversal /submission-files/..%2f..%2f.env/download",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-01",
+  "title": "Path traversal /profile/avatar/..%2f..%2f.env",
+  "status": "PASS",
+  "detail": "HTTP 404",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-01",
+  "title": "Path traversal /materials/1%00/download",
+  "status": "PASS",
+  "detail": "HTTP 400",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-01",
+  "title": "Path traversal /submission-files/../../../etc/passwd/download",
+  "status": "PASS",
+  "detail": "HTTP 200",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-05",
+  "title": "SQL injection payloads in query strings: no errors",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-05",
+  "title": "SQL injection time-based payload does not delay responses",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-05",
+  "title": "SQL injection payload in JSON body is stored as text only",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-05",
+  "title": "Users table still intact after injection attempts",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /courses?sort=id;select%20pg_sleep(4) handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /users?per_page=1000000 handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /users?page=-1 handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /users?page[]=1 handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /users?per_page=abc handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "Odd parameter /courses?filter[id]=1 handled safely",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-04",
+  "title": "per_page is capped (no unbounded list)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Stored XSS payload <script>alert(1)</scri returned as inert JSON text",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Payload <script>alert(1)</scri stored as",
+  "status": "INFO",
+  "detail": "stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Stored XSS payload \"><img src=x onerror=a returned as inert JSON text",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Payload \"><img src=x onerror=a stored as",
+  "status": "INFO",
+  "detail": "stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Stored XSS payload javascript:alert(1) returned as inert JSON text",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Payload javascript:alert(1) stored as",
+  "status": "INFO",
+  "detail": "stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Stored XSS payload <svg/onload=alert(1)> returned as inert JSON text",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-02",
+  "title": "Payload <svg/onload=alert(1)> stored as",
+  "status": "INFO",
+  "detail": "stored verbatim (Flutter renders text, not HTML; CSP blocks scripts)",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-01",
+  "title": "Reflected XSS: search term is not echoed into HTML",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-01",
+  "title": "Reflected XSS: static pages do not echo query strings",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-17",
+  "title": "Host header injection: response links do not use an attacker host",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-17",
+  "title": "X-Forwarded-Host from a client is ignored",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-15",
+  "title": "CRLF in a parameter does not inject headers",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-20",
+  "title": "Oversized field is rejected by validation (not 500)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-20",
+  "title": "Deeply nested JSON handled without a server error",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-20",
+  "title": "12 MB body rejected at the edge",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-20",
+  "title": "Control and bidi characters are stripped from names",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Upload refused - avatar: PHP disguised as PNG",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Upload refused - avatar: HTML as PNG",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Upload refused - avatar: SVG with script",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Upload refused - avatar: EICAR virus",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Upload refused - avatar: oversized (5 MB)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-09",
+  "title": "A genuine small PNG avatar is accepted",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-09",
+  "title": "Virus-containing submission file is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-09",
+  "title": "Submission with path-traversal file name",
+  "status": "INFO",
+  "detail": "HTTP 201",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-08",
+  "title": "Stored file name does not keep the traversal path",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-BUSL-09",
+  "title": "Lecturer can upload a course material",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Other-university lecturer cannot upload to our course",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-02",
+  "title": "Student cannot upload course materials",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Enrolled student downloads the material with safe headers",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Student of another university cannot download it",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHZ-04",
+  "title": "Anonymous cannot download it",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-INPV-18",
+  "title": "CSV formula injection (=cmd) in imported names",
+  "status": "INFO",
+  "detail": "exported CSV: check manually if names reach exports",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-07",
+  "title": "CORS: Origin https://evil.example is not granted access",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-07",
+  "title": "CORS: Origin null is not granted access",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-07",
+  "title": "CORS: Origin http://localhost:8088.evil.example is not granted access",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-07",
+  "title": "CORS: the real site origin is allowed and not wildcarded",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CLNT-09",
+  "title": "Site cannot be framed (X-Frame-Options + frame-ancestors)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-APIT-02",
+  "title": "API throttle (120/min) returns 429 under a burst of 130 requests",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-APIT-02",
+  "title": "/me burst of 60 requests",
+  "status": "INFO",
+  "detail": "{429} (note: /me has no per-route throttle in margin_auth.php)",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: SQL injection in query",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: UNION SELECT",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: XSS in query",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: path traversal",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: LFI php wrapper",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: command injection",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks: Log4Shell probe",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks scanner user-agent sqlmap/1.7.2",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks scanner user-agent Nikto/2.5.0",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks scanner user-agent Mozilla/5.0 (compa",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks scanner user-agent masscan/1.3",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Firewall blocks scanner user-agent zgrab/0.x",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Normal login passes the firewall",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Names with apostrophes, hyphens, parentheses and ampersands are not blocked",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "A name containing SQL keywords in parentheses",
+  "status": "INFO",
+  "detail": "HTTP 200 (the firewall may treat SQL-looking text as an attack: accepted trade-off at paranoia level 1)",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "A genuine image upload passes the firewall",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Coursework text containing SQL/HTML words is not blocked",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WAF",
+  "title": "Same SQL payload straight at the app (no firewall) is harmless",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CRYP-03",
+  "title": "App-to-database connections use TLS",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-01",
+  "title": "Database port is not published on the host",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-01",
+  "title": "Runtime DB account is neither superuser nor RLS-bypassing",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ERRH-01",
+  "title": "APP_DEBUG=false and APP_ENV=production in the running container",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CONF-03",
+  "title": "Secret .env files are not tracked by git",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-CRYP-01",
+  "title": "TLS between browser and site",
+  "status": "INFO",
+  "detail": "provided by the Cloudflare tunnel once public; not testable on http://localhost",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-IDNT-04",
+  "title": "Wrong password and unknown user give the same response",
+  "status": "PASS",
+  "detail": "422 {\"message\":\"Invalid credentials or account unavailable.\",\"errors\":{\"email\":[\"Inv",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-IDNT-04",
+  "title": "Login timing does not reveal whether an account exists (median of 8)",
+  "status": "PASS",
+  "detail": "known 280 ms, unknown 287 ms",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-IDNT-04",
+  "title": "Forgot-password response is identical for known and unknown addresses",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-02",
+  "title": "Default/guessable credential admin@margin.test / admin rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-02",
+  "title": "Default/guessable credential admin@margin.test / Local-Only-ChangeMe!123 rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-02",
+  "title": "Default/guessable credential student@margin.test / password rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-02",
+  "title": "Default/guessable credential lecturer@margin.test / Password123! rejected",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-04",
+  "title": "All 71 authenticated routes reject anonymous requests",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-07",
+  "title": "Weak password refused (too short)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-07",
+  "title": "Weak password refused (no upper case)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-07",
+  "title": "Weak password refused (no digit)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-07",
+  "title": "Weak password refused (no symbol)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-07",
+  "title": "Weak password refused (breached/common)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-09",
+  "title": "Changing the password requires the current password",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-09",
+  "title": "Password reset with a forged token is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-03",
+  "title": "MFA challenge is rate limited (429 within 8 attempts)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-03",
+  "title": "Repeated failed logins trigger a lockout (429)",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ },
+ {
+  "wstg": "WSTG-ATHN-03",
+  "title": "While locked, even the right password is refused",
+  "status": "PASS",
+  "detail": "",
+  "severity": ""
+ }
+]

@@ -1,0 +1,100 @@
+[
+  {
+    "wstg": "DEPLOY-LOGIN",
+    "title": "student@margin.test signs in through the firewall",
+    "status": "PASS",
+    "detail": "",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-LOGIN",
+    "title": "student@margin.test /me after login",
+    "status": "PASS",
+    "detail": "",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-LOGIN",
+    "title": "lecturer@margin.test signs in through the firewall",
+    "status": "PASS",
+    "detail": "",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-LOGIN",
+    "title": "lecturer@margin.test /me after login",
+    "status": "PASS",
+    "detail": "",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-COOKIE",
+    "title": "Session cookie is HttpOnly, Secure, SameSite=Lax",
+    "status": "PASS",
+    "detail": "expires=Wed, 25 Nov 2026 01:15:41 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-WAF",
+    "title": "PUT (profile edit, with an apostrophe and brackets) passes the firewall",
+    "status": "PASS",
+    "detail": "HTTP 200",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-WAF",
+    "title": "TRACE is still refused",
+    "status": "PASS",
+    "detail": "HTTP 405",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-UPLOAD",
+    "title": "Student can list assignments",
+    "status": "PASS",
+    "detail": "",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-UPLOAD",
+    "title": "Clean PNG submission is accepted after the virus scan",
+    "status": "PASS",
+    "detail": "HTTP 201",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-UPLOAD",
+    "title": "EICAR test file is refused",
+    "status": "PASS",
+    "detail": "HTTP 422 {\"message\":\"The file failed its security scan.\",\"errors\":{\"file\":[\"The file failed its security scan.\"]}}",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-WAF",
+    "title": "Firewall blocks SQL injection",
+    "status": "PASS",
+    "detail": "HTTP 403",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-WAF",
+    "title": "Firewall blocks XSS",
+    "status": "PASS",
+    "detail": "HTTP 403",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-WAF",
+    "title": "Firewall blocks Log4Shell",
+    "status": "PASS",
+    "detail": "HTTP 403",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-RESET",
+    "title": "Forgot-password reply is identical for known and unknown addresses",
+    "status": "PASS",
+    "detail": "HTTP 200",
+    "severity": ""
+  }
+]

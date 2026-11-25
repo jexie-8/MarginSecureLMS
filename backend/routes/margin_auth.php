@@ -16,7 +16,7 @@ Route::prefix('v1')->name('margin.auth.')->group(function (): void {
     Route::post('/mobile/login', [MobileAuthController::class, 'login'])->middleware('throttle:20,1')->name('mobile.login');
     Route::post('/mobile/mfa/challenge', [MobileAuthController::class, 'challenge'])->middleware('throttle:5,1')->name('mobile.mfa.challenge');
 
-    Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, BindSessionToClient::class, EnforceAbsoluteSessionLifetime::class])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, BindSessionToClient::class, EnforceAbsoluteSessionLifetime::class, 'throttle:margin-api'])->group(function (): void {
         Route::post('/mobile/logout', [MobileAuthController::class, 'logout'])->name('mobile.logout');
         Route::get('/me', [AuthController::class, 'me'])->name('me');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

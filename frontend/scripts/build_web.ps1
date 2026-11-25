@@ -15,23 +15,31 @@
   ./scripts/build_web.ps1 -ApiUrl https://api.lms.example.edu
 #>
 param(
-  [Parameter(Mandatory = $true)]
-  [string]$ApiUrl
+  # Optional. Leave empty when the site and the API are served from the same
+  # address (the app then talks to its own origin). Give an https:// address
+  # only when the API lives on a different host.
+  [string]$ApiUrl = ''
 )
 
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
-$uri = [System.Uri]$ApiUrl
-if ($uri.Scheme -ne 'https') {
-  throw "ApiUrl must start with https:// (got '$ApiUrl')."
+if ([string]::IsNullOrWhiteSpace($ApiUrl)) {
+  $origin = "'self'"
+  $defineArgs = @()
+  Write-Host 'Building release bundle that talks to its own origin ...'
+} else {
+  $uri = [System.Uri]$ApiUrl
+  if ($uri.Scheme -ne 'https') {
+    throw "ApiUrl must start with https:// (got '$ApiUrl')."
+  }
+  $origin = $uri.GetLeftPart([System.UriPartial]::Authority)
+  $defineArgs = @("--dart-define=API_BASE_URL=$origin")
+  Write-Host "Building release bundle for API $origin ..."
 }
-$origin = $uri.GetLeftPart([System.UriPartial]::Authority)
-
-Write-Host "Building release bundle for API $origin ..."
 # Flutter prints progress notes on stderr; do not treat those as failures.
 $ErrorActionPreference = 'Continue'
-flutter build web --release --no-web-resources-cdn --no-wasm-dry-run "--dart-define=API_BASE_URL=$origin"
+flutter build web --release --no-web-resources-cdn --no-wasm-dry-run @defineArgs
 $buildExit = $LASTEXITCODE
 $ErrorActionPreference = 'Stop'
 if ($buildExit -ne 0) { throw 'flutter build failed.' }

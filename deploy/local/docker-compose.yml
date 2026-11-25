@@ -1,0 +1,219 @@
+# Margin LMS on one machine, reachable from the internet only through a free
+# Cloudflare quick tunnel (HTTPS, no domain needed).
+#
+#   tunnel -> waf (nginx + ModSecurity/OWASP CRS) -> app (nginx + PHP-FPM + web app)
+#                                                      |-> db (PostgreSQL, never published)
+#
+# Nothing is published on the host except a loopback-only test port, so the
+# tunnel is the only way in. Start everything with ./start.ps1.
+name: margin
+
+x-app-environment: &app-environment
+  APP_NAME: Margin LMS
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_KEY: ${APP_KEY}
+  APP_URL: ${TUNNEL_SCHEME:-https}://${TUNNEL_HOST:-localhost}
+  FRONTEND_URL: ${TUNNEL_SCHEME:-https}://${TUNNEL_HOST:-localhost}
+  FORCE_ROOT_URL: "true"
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: warning
+
+  DB_CONNECTION: pgsql
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_DATABASE: margin_db
+  DB_USERNAME: margin_runtime
+  DB_PASSWORD: ${DB_RUNTIME_PASSWORD}
+  # The database accepts TLS connections only; check its certificate and name.
+  DB_SSLMODE: verify-full
+  DB_SSLROOTCERT: /run/margin-db-ca/ca.crt
+
+  SESSION_DRIVER: database
+  SESSION_ENCRYPT: "true"
+  SESSION_LIFETIME: "120"
+  SESSION_ABSOLUTE_MINUTES: "720"
+  SESSION_SECURE_COOKIE: "true"
+  SESSION_HTTP_ONLY: "true"
+  SESSION_SAME_SITE: lax
+  SESSION_DOMAIN: ""
+  CACHE_STORE: database
+  QUEUE_CONNECTION: database
+  SANCTUM_STATEFUL_DOMAINS: ${TUNNEL_HOST:-localhost}
+  CORS_ALLOWED_ORIGINS: ${TUNNEL_SCHEME:-https}://${TUNNEL_HOST:-localhost}
+  REQUIRE_BROWSER_CONTEXT: "true"
+  CHECK_BREACHED_PASSWORDS: "true"
+  # Only the WAF container (on the private Docker network) talks to the app.
+  TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+
+  # Uploaded files stay on a private volume that is never served directly.
+  FILESYSTEM_DISK: local
+  FILES_DISK: local
+  FILESYSTEM_THROW: "true"
+  CLAMAV_COMMAND: clamscan
+  FILE_SCAN_REQUIRED: "true"
+  FILE_SCAN_TIMEOUT: "30"
+
+  # Outgoing SMTP (465/587) is blocked on this PC, so mail goes out over HTTPS
+  # (port 443) through Resend's free plan. Set MAIL_MAILER=smtp to use the
+  # SMTP settings below instead.
+  MAIL_MAILER: ${MAIL_MAILER:-resend}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+  MAIL_PORT: ${MAIL_PORT:-465}
+  MAIL_SCHEME: ${MAIL_SCHEME:-smtps}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-onboarding@resend.dev}
+  MAIL_FROM_NAME: Margin LMS
+  MAIL_ALWAYS_TO: ${MAIL_ALWAYS_TO:-}
+  LMS_MAIL_NOTIFICATIONS: "true"
+  AUDIT_RETENTION_DAYS: "365"
+  PRIVACY_CONTACT_EMAIL: ${MAIL_ALWAYS_TO:-privacy@localhost}
+
+x-app: &app
+  build:
+    context: ../../backend
+    dockerfile: Dockerfile
+  image: margin-app:local
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+  volumes:
+    - db-ca:/run/margin-db-ca:ro
+
+# Third-party images are pinned to exact versions so a rebuild never pulls
+# something unreviewed. Update them on purpose.
+services:
+  # Makes the database's TLS certificate once, then exits.
+  certs:
+    image: alpine/openssl:3.5.9
+    entrypoint: ["sh", "/make-db-certs.sh"]
+    restart: "no"
+    volumes:
+      - ./make-db-certs.sh:/make-db-certs.sh:ro
+      - db-certs:/certs
+      - db-ca:/ca
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/certs/server.crt
+      - -c
+      - ssl_key_file=/certs/server.key
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MARGIN_OWNER_PASSWORD: ${DB_OWNER_PASSWORD}
+      MARGIN_RUNTIME_PASSWORD: ${DB_RUNTIME_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db-init.sh:/docker-entrypoint-initdb.d/10-margin.sh:ro
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - db-certs:/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    <<: *app
+    environment: *app-environment
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../frontend/build/web:/var/www/web:ro
+      - app-files:/var/www/html/storage/app/private
+      - clamav-db:/var/lib/clamav
+      - db-ca:/run/margin-db-ca:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+
+  worker:
+    <<: *app
+    environment: *app-environment
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    volumes:
+      - app-files:/var/www/html/storage/app/private
+      - db-ca:/run/margin-db-ca:ro
+
+  scheduler:
+    <<: *app
+    environment: *app-environment
+    command: ["php", "artisan", "schedule:work"]
+
+  waf:
+    image: owasp/modsecurity-crs:4.30.0-nginx-202611190211
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      BACKEND: http://app:8080
+      PORT: "8080"
+      SERVER_NAME: localhost
+      MODSEC_RULE_ENGINE: "On"
+      PARANOIA: "1"
+      BLOCKING_PARANOIA: "1"
+      ANOMALY_INBOUND: "5"
+      ANOMALY_OUTBOUND: "4"
+      # The CRS default allows only GET/HEAD/POST/OPTIONS (rule 911100), which
+      # blocked every profile edit, grade and delete. These are the methods the
+      # API actually routes; anything else (TRACE, CONNECT, ...) stays blocked.
+      ALLOWED_METHODS: GET HEAD POST PUT PATCH DELETE OPTIONS
+      MODSEC_REQ_BODY_LIMIT: "52428800"
+      MODSEC_REQ_BODY_NOFILES_LIMIT: "1048576"
+    ports:
+      # Loopback only, for testing on this machine. The tunnel is the way in.
+      - "127.0.0.1:8088:8080"
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.11.1
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--url", "http://waf:8080"]
+
+  # One-off tasks, run with: docker compose run --rm <name>
+  migrate:
+    <<: *app
+    profiles: ["tools"]
+    environment:
+      <<: *app-environment
+      DB_USERNAME: margin_owner
+      DB_PASSWORD: ${DB_OWNER_PASSWORD}
+    command: ["php", "artisan", "migrate", "--force"]
+
+  seed:
+    <<: *app
+    profiles: ["tools"]
+    environment:
+      <<: *app-environment
+      # The demonstration seeder refuses to run in production, and it needs the
+      # superuser because Row-Level Security applies to the table owner.
+      APP_ENV: local
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      MARGIN_SEED_ADMIN_PASSWORD: ${MARGIN_SEED_ADMIN_PASSWORD}
+    command: ["php", "artisan", "db:seed", "--force"]
+
+volumes:
+  db-data:
+  db-certs:
+  db-ca:
+  app-files:
+  clamav-db:
