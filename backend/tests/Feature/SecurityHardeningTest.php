@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -193,10 +194,26 @@ class SecurityHardeningTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event' => 'current']);
     }
 
-    public function test_admin_mfa_lifecycle_requires_password_and_consumes_recovery_code(): void
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function mfaRoles(): array
+    {
+        return [
+            'platform admin' => ['platform_admin'],
+            'university admin' => ['university_admin'],
+            'department admin' => ['department_admin'],
+            'lecturer' => ['lecturer'],
+            'teaching assistant' => ['teaching_assistant'],
+            'student' => ['student'],
+        ];
+    }
+
+    #[DataProvider('mfaRoles')]
+    public function test_mfa_lifecycle_for_every_role_requires_password_and_consumes_recovery_code(string $role): void
     {
         $password = 'Strong-Password!123';
-        $administrator = User::factory()->role('platform_admin')->create([
+        $administrator = User::factory()->role($role)->create([
             'password' => Hash::make($password),
         ]);
 

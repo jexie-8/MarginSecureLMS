@@ -13,11 +13,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
+/**
+ * TOTP multi-factor authentication. Every role (students, lecturers, teaching
+ * assistants and administrators) can enrol; once enrolled, both the browser and
+ * the mobile login require the second factor.
+ */
 class MfaController extends Controller
 {
     public function setup(Request $request, TotpService $totp, AuditLogger $audit): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, ['platform_admin', 'university_admin', 'department_admin'], true), 403);
         $request->validate(['password' => ['required', 'current_password:sanctum']]);
         abort_if($request->user()->mfa_confirmed_at !== null, 409, 'Disable the existing MFA configuration before creating a new one.');
         $secret = $totp->secret();
@@ -33,7 +37,6 @@ class MfaController extends Controller
     {
         $data = $request->validate(['code' => ['required', 'digits:6']]);
         $user = $request->user();
-        abort_unless(in_array($user->role, ['platform_admin', 'university_admin', 'department_admin'], true), 403);
         abort_unless($user->mfa_secret && $totp->verify($user->mfa_secret, $data['code']), 422, 'The verification code is invalid.');
         $plain = collect(range(1, 8))->map(fn () => Str::upper(Str::random(10)))->all();
         $user->forceFill(['mfa_confirmed_at' => now(), 'mfa_recovery_codes' => array_map(fn ($code) => Hash::make($code), $plain)])->save();

@@ -233,12 +233,12 @@ class ProfilePage extends StatelessWidget {
                   icon: const Icon(Icons.password_outlined),
                   label: const Text('Reset password'),
                 ),
-                if (user.isAdministrator)
-                  OutlinedButton.icon(
-                    onPressed: () => _manageMfa(context, user.mfaEnabled),
-                    icon: const Icon(Icons.phonelink_lock_outlined),
-                    label: Text(user.mfaEnabled ? 'Manage MFA' : 'Enable MFA'),
-                  ),
+                // MFA is available to every role, not only administrators.
+                OutlinedButton.icon(
+                  onPressed: () => _manageMfa(context, user.mfaEnabled),
+                  icon: const Icon(Icons.phonelink_lock_outlined),
+                  label: Text(user.mfaEnabled ? 'Manage MFA' : 'Enable MFA'),
+                ),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.error,
@@ -751,7 +751,7 @@ class _MfaSetupDialogState extends State<MfaSetupDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Admin multi-factor authentication'),
+    title: const Text('Multi-factor authentication'),
     content: SizedBox(
       width: 560,
       child: widget.enabled

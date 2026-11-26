@@ -7,6 +7,7 @@ use App\Models\University;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class MobileTokenAuthenticationTest extends TestCase
@@ -154,9 +155,23 @@ class MobileTokenAuthenticationTest extends TestCase
         $this->api($phone, 'getJson', '/api/v1/me')->assertOk();
     }
 
-    public function test_admins_with_mfa_must_complete_the_challenge(): void
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function mfaRoles(): array
     {
-        $admin = $this->makeUser('university_admin', 'active', [
+        return [
+            'university admin' => ['university_admin'],
+            'lecturer' => ['lecturer'],
+            'teaching assistant' => ['teaching_assistant'],
+            'student' => ['student'],
+        ];
+    }
+
+    #[DataProvider('mfaRoles')]
+    public function test_any_role_with_mfa_must_complete_the_challenge(string $role): void
+    {
+        $admin = $this->makeUser($role, 'active', [
             'mfa_secret' => 'JBSWY3DPEHPK3PXP',
             'mfa_recovery_codes' => [Hash::make('RECOVERYONE')],
         ]);

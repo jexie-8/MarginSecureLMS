@@ -32,8 +32,6 @@ class MobileAuthController extends Controller
 
     private const MFA_MAX_ATTEMPTS = 5;
 
-    private const MFA_ROLES = ['platform_admin', 'university_admin', 'department_admin'];
-
     public function login(LoginRequest $request, AuditLogger $audit): JsonResponse
     {
         $credentials = $request->validated();
@@ -69,7 +67,8 @@ class MobileAuthController extends Controller
 
         RateLimiter::clear($key);
 
-        if ($user->mfa_confirmed_at !== null && in_array($user->role, self::MFA_ROLES, true)) {
+        // Any role that has enrolled in MFA must pass the second factor.
+        if ($user->mfa_confirmed_at !== null) {
             $challengeId = Str::random(64);
             Cache::put($this->challengeKey($challengeId), $user->id, now()->addMinutes(self::MFA_CHALLENGE_MINUTES));
             $audit->record($user, 'auth.mfa_required', $user, ['client' => 'mobile'], $request);

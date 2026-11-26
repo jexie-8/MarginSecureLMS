@@ -56,7 +56,8 @@ class AuthController extends Controller
             $this->recordFailure($request, $audit, $key, $user, 'account_unavailable');
         }
 
-        if ($user->mfa_confirmed_at !== null && in_array($user->role, ['platform_admin', 'university_admin', 'department_admin'], true)) {
+        // Any role that has enrolled in MFA must pass the second factor.
+        if ($user->mfa_confirmed_at !== null) {
             Auth::guard('web')->logout();
             $request->session()->regenerate();
             $request->session()->put('mfa_user_id', $user->id);

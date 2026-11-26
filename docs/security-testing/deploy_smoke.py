@@ -54,6 +54,11 @@ s.put(API + '/profile', {'name': 'Demo Student'})
 r = s.request('TRACE', '/')
 R.check('DEPLOY-WAF', 'TRACE is still refused', r.status in (403, 405), detail_ok=f'HTTP {r.status}', detail_bad=f'HTTP {r.status}', severity='low')
 
+# MFA is open to every role: a student may start enrolment, but only with the
+# current password (no password -> 422, never 403). Nothing is changed here.
+r = s.post(API + '/mfa/setup', {})
+R.check('DEPLOY-MFA', 'Student can reach MFA setup, which still asks for the password', r.status == 422 and 'password' in r.text, detail_ok=f'HTTP {r.status}', detail_bad=f'HTTP {r.status} {r.text[:120]}', severity='medium')
+
 # 2. Upload: a clean image is accepted, the EICAR test virus is refused
 assignments = (s.get(API + '/assignments').json() or {}).get('data', [])
 target = next((a for a in assignments if a.get('status', 'published') != 'closed'), None)

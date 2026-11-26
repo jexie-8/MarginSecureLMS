@@ -67,10 +67,11 @@ class ExpandedLmsFeaturesTest extends TestCase
         $this->actingAs($data['student'])->getJson('/api/v1/attendance')->assertJsonPath('data.0.records.0.status', 'present');
     }
 
-    public function test_students_cannot_use_admin_import_or_mfa_setup(): void
+    public function test_students_cannot_use_admin_import_but_can_start_mfa_setup(): void
     {
         $data = $this->records();
         $this->actingAs($data['student'])->post('/api/v1/imports/users', ['file' => UploadedFile::fake()->createWithContent('users.csv', "name,email,role,password\nA,a@test.local,student,Password!12345")])->assertForbidden();
-        $this->actingAs($data['student'])->postJson('/api/v1/mfa/setup')->assertForbidden();
+        // MFA is open to every role; setup still needs the current password.
+        $this->actingAs($data['student'])->postJson('/api/v1/mfa/setup')->assertUnprocessable()->assertJsonValidationErrors('password');
     }
 }

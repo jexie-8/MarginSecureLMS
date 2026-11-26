@@ -12,10 +12,10 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 
 | Status | Count |
 |---|---|
-| ✅ Met | 90 |
-| 🟡 Partly met | 5 |
+| ✅ Met | 93 |
+| 🟡 Partly met | 3 |
 | ❌ Not met | 0 |
-| ⏳ Depends on deployment | 1 |
+| ⏳ Depends on deployment | 0 |
 | ➖ Not applicable | 3 |
 
 ## V1 Encoding and Sanitization
@@ -73,7 +73,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 | Antivirus scan before storing | ✅ | ClamAV in the app image with `freshclam` keeping signatures current (`clamav-db` volume); `FILE_SCAN_REQUIRED=true`. Through the firewall: clean PNG accepted (201), EICAR test file refused (422 "The file failed its security scan.") | Yes (`deploy_smoke.py`, WSTG upload checks) |
 | Stored with generated names, outside any public web root | ✅ | `$file->store()` on the private disk | Yes |
 | Download requires an authorisation check | ✅ | `downloadMaterial`, `submissionFile`, `SubmissionPolicy` | Yes |
-| Archive files cannot cause resource exhaustion | 🟡 | `application/zip` is allowed; contents are not inspected for decompression bombs (stored and downloaded only, never unpacked by the server, so the risk is to the downloader) | No |
+| Archive files cannot cause resource exhaustion | ✅ | `FileSecurityScanner` reads the central directory of every ZIP container (including .docx/.xlsx) without unpacking it and refuses archives that are too large when unpacked (default 256 MB), have too many entries (default 2000), have an extreme compression ratio, are nested, split or ZIP64 | Yes (`ArchiveInspectionTest`; live: `deploy_smoke.py` ZIP-bomb check) |
 | Files kept in private storage, never served directly | ✅ | All uploads and downloads go through `PrivateFiles`, which refuses any public disk and streams downloads after the permission check. Local deployment: `FILES_DISK=local` on the `app-files` volume (`storage/app/private`); nginx serves only `/var/www/web`, so no path reaches it | Yes (`PrivateFileStorageTest`; WSTG-CONF-04 sensitive-path checks) |
 
 ## V6 Authentication
@@ -89,7 +89,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 | Password change requires the current password | ✅ | `current_password:web` rule | Yes |
 | Password reset by time-limited emailed link | ✅ | Laravel broker, 60-minute expiry (`config/auth.php`); same response whether or not the email exists | Yes |
 | Password reset ends existing sessions | ✅ | Fixed 2026-11-23 in `PasswordResetController` | Yes (`PasswordResetSessionRevocationTest`) |
-| Multi-factor authentication available | 🟡 | TOTP for admin roles only, optional to enrol; recovery codes stored hashed. Students and lecturers have none | Yes |
+| Multi-factor authentication available | ✅ | TOTP available to every role (students, lecturers, teaching assistants, administrators) on web and mobile; once enrolled, both login flows require the second factor. Enrolment needs the current password; 8 one-time recovery codes stored hashed. Enrolment is optional (accepted gap: ASVS Level 2 6.3.3 asks for mandatory MFA) | Yes (`SecurityHardeningTest`, `MobileTokenAuthenticationTest` per role; Flutter `mfa_all_roles_test.dart`; live: `deploy_smoke.py` DEPLOY-MFA) |
 | A used TOTP code cannot be replayed within its time window | ✅ | `MfaVerifier` remembers each accepted 30-second step for 3 minutes | Yes (`AccountProtectionGapsTest`) |
 | No default or demo accounts in production | ✅ | `DatabaseSeeder` throws in production | Yes |
 
@@ -146,7 +146,7 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 
 | Control | Status | Evidence | Verified by test |
 |---|---|---|---|
-| TLS for all client traffic | ⏳ | Browsers and the mobile app reach the site only through the Cloudflare tunnel (HTTPS at Cloudflare's edge; release mobile builds refuse non-HTTPS). The hops `cloudflared -> waf -> app` are plain HTTP on the private Docker network inside the same PC (an ASVS Level 2 gap, accepted). Nothing but loopback is published on the host | ⏳ Live check over the tunnel URL (certificate, HSTS, cookies) during the public run |
+| TLS for all client traffic | ✅ | Browsers and the mobile app reach the site only through the Cloudflare tunnel (HTTPS at Cloudflare's edge; release mobile builds refuse non-HTTPS). The hops `cloudflared -> waf -> app` are plain HTTP on the private Docker network inside the same PC (an ASVS Level 2 gap, accepted). Nothing but loopback is published on the host | Live check 2026-11-25 over the tunnel URL: certificate verifies, HTTP redirects (301) to HTTPS, `Strict-Transport-Security: max-age=31536000`, session cookie HttpOnly + Secure + SameSite=Lax (`deploy_smoke.py`, 17/17) |
 | TLS to the database with certificate validation | ✅ | `deploy/local/docker-compose.yml`: PostgreSQL `ssl=on`, TLS 1.2 minimum; `pg_hba.conf` accepts `hostssl` only; app uses `DB_SSLMODE=verify-full` against a local CA whose key is deleted after signing (`make-db-certs.sh`). Observed: TLSv1.3 / TLS_AES_256_GCM_SHA384; plaintext and wrong-CA connections refused | Yes (`docs/security-testing/evidence/db_checks.txt`) |
 | Database not reachable from the internet | ✅ | The `db` service publishes no port; it is reachable only on the private Docker network. (A separate development PostgreSQL installed on Windows was listening on all interfaces, finding V-08; it is now restricted to localhost, see V13) | Yes (`db_checks.txt`: `docker compose ps`) |
 
@@ -205,6 +205,10 @@ This checklist is organised by ASVS chapter rather than by individual requiremen
 ## Gaps to close (updated 2026-11-25)
 
 1. **Turn on the dependency routine** (V13): push `.github/` to GitHub.
-2. **Live HTTPS check over the tunnel URL** (V12): certificate, HSTS and cookie flags in a browser during the public run.
-3. **Archive inspection** (V5): optional limit or inspection for ZIP uploads.
-4. **MFA for all roles** (V6): currently admin roles only.
+
+Closed on 2026-11-25: live HTTPS check over the tunnel URL (V12), archive inspection for ZIP uploads (V5), and MFA for all roles (V6: TOTP is now available to students, lecturers and teaching assistants as well as administrators, on web and mobile).
+
+### Accepted gaps
+
+- **MFA is optional** (V6, ASVS Level 2 6.3.3): every role can enrol and is then always challenged, but enrolment is not forced, so a user who never enrols signs in with a password only (still protected by the password policy, breached-password check, login throttling and session limits).
+- **Plain HTTP inside the Docker network** (V12, Level 2): `cloudflared -> waf -> app` on the same PC.
