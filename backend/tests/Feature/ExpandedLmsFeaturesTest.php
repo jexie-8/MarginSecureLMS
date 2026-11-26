@@ -12,6 +12,7 @@ use App\Models\University;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -49,6 +50,31 @@ class ExpandedLmsFeaturesTest extends TestCase
         $this->actingAs($data['lecturer'])->postJson('/api/v1/announcements', ['course_id' => $data['course']->id, 'title' => 'Schedule change', 'body' => 'Class starts at ten.', 'published' => true])->assertCreated();
         $this->actingAs($data['student'])->getJson('/api/v1/notifications')->assertOk()->assertJsonPath('unread_count', 1)->assertJsonPath('data.data.0.title', 'Schedule change');
         $this->actingAs($data['outsider'])->getJson('/api/v1/announcements')->assertJsonCount(0, 'data.data');
+    }
+
+    public function test_draft_announcements_are_hidden_from_students_but_not_from_staff(): void
+    {
+        $data = $this->records();
+        $this->actingAs($data['lecturer'])->postJson('/api/v1/announcements', ['course_id' => $data['course']->id, 'title' => 'Draft only', 'body' => 'Not ready yet.', 'published' => false])->assertCreated();
+        $this->actingAs($data['lecturer'])->postJson('/api/v1/announcements', ['course_id' => $data['course']->id, 'title' => 'Live', 'body' => 'Published.', 'published' => true])->assertCreated();
+
+        $this->actingAs($data['student'])->getJson('/api/v1/announcements')->assertOk()
+            ->assertJsonCount(1, 'data.data')->assertJsonPath('data.data.0.title', 'Live');
+        $this->actingAs($data['lecturer'])->getJson('/api/v1/announcements')->assertOk()->assertJsonCount(2, 'data.data');
+    }
+
+    public function test_demo_seeder_adds_attendance_announcements_and_events_without_duplicates(): void
+    {
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+
+        $student = User::query()->where('email', 'student@margin.test')->firstOrFail();
+        $this->assertSame(16, DB::table('attendance_sessions')->count());
+        $this->assertSame(16, DB::table('attendance_records')->where('student_id', $student->id)->count());
+        $this->assertSame(5, DB::table('announcements')->count());
+        $this->assertSame(4, DB::table('calendar_events')->count());
+        $this->actingAs($student)->getJson('/api/v1/attendance')->assertOk()->assertJsonCount(16, 'data');
+        $this->actingAs($student)->getJson('/api/v1/announcements')->assertOk()->assertJsonCount(5, 'data.data');
     }
 
     public function test_calendar_search_attendance_and_grade_summary_are_course_scoped(): void

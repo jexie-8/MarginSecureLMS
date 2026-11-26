@@ -76,6 +76,10 @@ class LearningToolsController extends Controller
             ->select('announcements.*', 'courses.name as course_name', 'users.name as author_name')->orderByDesc('published_at');
         $courseIds = $this->visibleCourseIds($request);
         $query->where(fn ($q) => $q->whereNull('announcements.course_id')->orWhereIn('announcements.course_id', $courseIds));
+        // Drafts (and announcements scheduled for later) are for course staff only.
+        if ($request->user()->role === 'student') {
+            $query->whereNotNull('announcements.published_at')->where('announcements.published_at', '<=', now());
+        }
 
         return response()->json(['data' => $query->paginate($this->perPage($request))]);
     }

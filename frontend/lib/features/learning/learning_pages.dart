@@ -14,6 +14,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/download.dart';
 import '../../shared/app_widgets.dart';
 import '../resources/submit_work.dart';
+import 'calendar_month_view.dart';
 
 /// Downloads a protected file (browser: opens it; mobile: fetches and opens it).
 Future<void> _download(BuildContext context, String path) async {
@@ -273,13 +274,15 @@ class _LearningToolPageState extends State<LearningToolPage> {
               onRetry: widget.section == 'search' ? doSearch : load,
             ),
           )
-        else if (items.isEmpty)
+        else if (items.isEmpty && widget.section != 'calendar')
           const Card(
             child: Padding(
               padding: EdgeInsets.all(38),
               child: Center(child: Text('Nothing to show yet.')),
             ),
           )
+        else if (widget.section == 'calendar')
+          CalendarMonthView(items: items)
         else
           ...items.map(_itemCard),
         if (admin && widget.section == 'calendar')

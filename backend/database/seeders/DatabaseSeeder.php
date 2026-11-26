@@ -11,6 +11,7 @@ use App\Models\Program;
 use App\Models\University;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -79,8 +80,9 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
+        $courses = [];
         foreach ($courseDefinitions as $definition) {
-            $course = Course::query()->updateOrCreate(
+            $course = $courses[] = Course::query()->updateOrCreate(
                 ['university_id' => $university->id, 'code' => $definition['code']],
                 ['name' => $definition['name'], 'description' => $definition['description']],
             );
@@ -106,11 +108,87 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        $this->seedDemoActivity($courses, $lecturer, $universityAdmin, $student);
+
         $this->command?->warn('Local demo accounts use MARGIN_SEED_ADMIN_PASSWORD or the documented local-only fallback.');
         $this->command?->line("Platform administrator: {$platformAdmin->email}");
         $this->command?->line("University administrator: {$universityAdmin->email}");
         $this->command?->line("Department administrator: {$departmentAdmin->email}");
         $this->command?->line("Teaching assistant: {$teachingAssistant->email}");
+    }
+
+    /**
+     * Demonstration content so the attendance, announcements, calendar and
+     * notifications pages have something to show. Re-running the seeder
+     * updates these rows instead of adding duplicates.
+     *
+     * @param  list<Course>  $courses
+     */
+    private function seedDemoActivity(array $courses, User $lecturer, User $universityAdmin, User $student): void
+    {
+        $statusPattern = [
+            ['present', null], ['present', null], ['late', 'Arrived 10 minutes late.'], ['present', null],
+            ['absent', null], ['present', null], ['excused', 'Medical note received.'], ['present', null],
+        ];
+        $announcements = [
+            'SEC101' => ['Welcome to Security Fundamentals', 'Welcome! Lecture slides are in Materials before each session. Bring questions about the risk assessment to Thursday\'s lab.'],
+            'SEC202' => ['OWASP review: extra lab hours', 'There will be an extra lab hour on Wednesday at 14:00 for anyone who wants help with the OWASP review.'],
+            'SEC240' => ['Code review report: sample code posted', 'The sample code for the code review report is now in Materials. Focus on input handling and authentication.'],
+            'SEC260' => ['Guest lecture on incident response', 'Next week a guest speaker from a security operations centre will walk through a real incident timeline.'],
+        ];
+        $events = [
+            'SEC101' => ['Lab: password cracking defences', 2, 10, 2],
+            'SEC202' => ['Midterm review session', 6, 12, 2],
+            'SEC240' => ['Secure coding workshop', 11, 9, 3],
+            'SEC260' => ['Guest lecture: incident response', 8, 15, 1],
+        ];
+
+        foreach ($courses as $c => $course) {
+            // Four past weekly sessions per course, with a mix of attendance statuses.
+            for ($week = 4; $week >= 1; $week--) {
+                $title = 'Week '.(5 - $week).' lecture';
+                DB::table('attendance_sessions')->updateOrInsert(
+                    ['course_id' => $course->id, 'title' => $title],
+                    ['created_by' => $lecturer->id, 'held_at' => now()->subWeeks($week)->setTime(9 + $c, 0), 'created_at' => now(), 'updated_at' => now()],
+                );
+                $sessionId = DB::table('attendance_sessions')->where('course_id', $course->id)->where('title', $title)->value('id');
+                [$status, $notes] = $statusPattern[($c * 2 + $week) % count($statusPattern)];
+                DB::table('attendance_records')->updateOrInsert(
+                    ['attendance_session_id' => $sessionId, 'student_id' => $student->id],
+                    ['status' => $status, 'notes' => $notes, 'created_at' => now(), 'updated_at' => now()],
+                );
+            }
+
+            [$title, $body] = $announcements[$course->code];
+            DB::table('announcements')->updateOrInsert(
+                ['course_id' => $course->id, 'title' => $title],
+                ['created_by' => $lecturer->id, 'body' => $body, 'published_at' => now()->subDays(1 + $c), 'created_at' => now(), 'updated_at' => now()],
+            );
+
+            [$title, $inDays, $hour, $hours] = $events[$course->code];
+            $startsAt = now()->addDays($inDays)->setTime($hour, 0);
+            DB::table('calendar_events')->updateOrInsert(
+                ['course_id' => $course->id, 'title' => $title],
+                ['created_by' => $lecturer->id, 'description' => $course->name, 'starts_at' => $startsAt, 'ends_at' => $startsAt->copy()->addHours($hours), 'visibility' => 'course', 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
+        DB::table('announcements')->updateOrInsert(
+            ['course_id' => null, 'title' => 'Library opening hours extended'],
+            ['created_by' => $universityAdmin->id, 'body' => 'During the assessment period the university library is open until 22:00 on weekdays.', 'published_at' => now()->subHours(6), 'created_at' => now(), 'updated_at' => now()],
+        );
+
+        $notifications = [
+            ['announcement', 'New announcement: Guest lecture on incident response', 'Network Defense has a new announcement.', null],
+            ['attendance', 'Attendance recorded', 'Your attendance for Week 4 lecture has been recorded.', null],
+            ['assignment', 'Deadline soon: Security Risk Assessment', 'Security Risk Assessment is due in 3 days.', now()->subDay()],
+        ];
+        foreach ($notifications as [$type, $title, $message, $readAt]) {
+            DB::table('lms_notifications')->updateOrInsert(
+                ['user_id' => $student->id, 'title' => $title],
+                ['type' => $type, 'message' => $message, 'read_at' => $readAt, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
     }
 
     private function user(

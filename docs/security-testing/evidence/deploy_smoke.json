@@ -31,7 +31,7 @@
     "wstg": "DEPLOY-COOKIE",
     "title": "Session cookie is HttpOnly, Secure, SameSite=Lax",
     "status": "PASS",
-    "detail": "expires=Wed, 25 Nov 2026 19:02:26 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax",
+    "detail": "expires=Thu, 26 Nov 2026 23:36:09 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax",
     "severity": ""
   },
   {
@@ -46,6 +46,13 @@
     "title": "TRACE is still refused",
     "status": "PASS",
     "detail": "HTTP 405",
+    "severity": ""
+  },
+  {
+    "wstg": "DEPLOY-MFA",
+    "title": "Student can reach MFA setup, which still asks for the password",
+    "status": "PASS",
+    "detail": "HTTP 422",
     "severity": ""
   },
   {
