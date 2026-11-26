@@ -3,6 +3,7 @@ OWASP WSTG-based security tests for Margin LMS (run against YOUR OWN local stack
 
   python run_wstg.py              # everything
   python run_wstg.py --json out.json
+  python run_wstg.py --keep-data   # do not remove the test data afterwards (cleanup.py)
 
 Needs the stack from deploy/local running, the test tenants from
 seed_test_tenants.php, and docker-compose.test.yml (loopback port 8089 for
@@ -341,7 +342,16 @@ def authorization():
     r = UA.post(API + '/users', {'name': 'Evil2', 'email': 'evil-pa2@margin.test', 'password': 'Evil-Passw0rd-123!', 'role': 'platform_admin', 'university_id': 1})
     R.check('WSTG-ATHZ-03', 'University admin cannot create a platform admin', r.status in (403, 422), detail_bad=f'HTTP {r.status} {r.text[:100]}', severity='critical')
     r = UA.post(API + '/users', {'name': 'Cross', 'email': 'cross-uni@margin.test', 'password': 'Evil-Passw0rd-123!', 'role': 'student', 'university_id': 2})
-    R.check('WSTG-ATHZ-03', 'University admin cannot create users in another university', r.status in (403, 422), detail_bad=f'HTTP {r.status} {r.text[:100]}', severity='high')
+    # The server may refuse, or ignore the requested university and use the admin's own
+    # (constrainAdministrativeFields). Either is safe; a user in university 2 is not.
+    # Earlier runs only passed because this account was left over from the first run
+    # (422 "email taken"); cleanup.py now removes it after every run.
+    made = (r.json() or {}).get('data', {}) if r.status == 201 else {}
+    own_uni = UA.get(API + '/me').json()['user']['university_id']
+    R.check('WSTG-ATHZ-03', 'University admin cannot create users in another university',
+            r.status in (403, 422) or (r.status == 201 and made.get('university_id') == own_uni),
+            detail_ok=f'HTTP {r.status}' + (f', created in own university {own_uni} instead of 2' if r.status == 201 else ''),
+            detail_bad=f'HTTP {r.status} {r.text[:100]}', severity='high')
 
     # horizontal / tenant isolation (IDOR)
     b_ids = {'course': B_COURSE, 'assignment': B_ASSIGN}
@@ -655,7 +665,19 @@ def infrastructure():
     R.add('WSTG-CRYP-01', 'TLS between browser and site', 'INFO', 'provided by the Cloudflare tunnel once public; not testable on http://localhost')
 
 
+def _start_cleanup():
+    """Remove what this run creates in the demo database when it ends (see cleanup.py)."""
+    if '--keep-data' in sys.argv:
+        print('--keep-data: test data is left in the database.')
+        return
+    import atexit
+    import cleanup
+    since = cleanup.db_now()
+    atexit.register(lambda: cleanup.report(cleanup.cleanup(since)))
+
+
 def main():
+    _start_cleanup()
     setup()
     for fn in (info_conf, sessions, authorization, input_validation, client_side_and_limits, waf, infrastructure, identity_authn):
         print(f'\n=== {fn.__name__} ===')

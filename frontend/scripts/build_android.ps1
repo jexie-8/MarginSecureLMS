@@ -17,8 +17,11 @@
   Flutter 3.44.7 with the Android SDK) instead of the local Flutter. Use it
   where Windows blocks Flutter's gen_snapshot.exe (Smart App Control). Gradle
   and pub downloads are kept in the Docker volumes margin-gradle-cache and
-  margin-pub-cache. The container also checks that the APK is signed with the
-  keystore from android/key.properties.
+  margin-pub-cache, and the Android NDK, CMake and SDK platforms that Gradle
+  installs on demand in margin-android-ndk, margin-android-cmake and
+  margin-android-platforms, so only the first build downloads them. The
+  container also checks that the APK is signed with the keystore from
+  android/key.properties.
 
 .EXAMPLE
   ./scripts/build_android.ps1
@@ -65,6 +68,9 @@ if ($Docker) {
     -v "${PWD}:/src" `
     -v margin-gradle-cache:/cache/gradle `
     -v margin-pub-cache:/cache/pub `
+    -v margin-android-ndk:/opt/android-sdk-linux/ndk `
+    -v margin-android-cmake:/opt/android-sdk-linux/cmake `
+    -v margin-android-platforms:/opt/android-sdk-linux/platforms `
     -e GRADLE_USER_HOME=/cache/gradle `
     -e PUB_CACHE=/cache/pub `
     -e "API_ORIGIN=$origin" `

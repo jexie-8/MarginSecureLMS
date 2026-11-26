@@ -2,7 +2,9 @@
 the same path the tunnel uses. Checks login, cookie flags, an upload with the
 virus scan, the firewall blocking attacks, and the password-reset reply.
 
-  python deploy_smoke.py [--json evidence/deploy_smoke.json]
+  python deploy_smoke.py [--json evidence/deploy_smoke.json] [--keep-data]
+
+The submissions it uploads are removed again when it ends (cleanup.py).
 """
 import io
 import json
@@ -28,6 +30,17 @@ def make_zip(files):
 
 PW =env_value('MARGIN_SEED_ADMIN_PASSWORD')
 R = Report()
+def _start_cleanup():
+    """Remove what this run creates in the demo database when it ends (see cleanup.py)."""
+    if '--keep-data' in sys.argv:
+        print('--keep-data: test data is left in the database.')
+        return
+    import atexit
+    import cleanup
+    since = cleanup.db_now()
+    atexit.register(lambda: cleanup.report(cleanup.cleanup(since)))
+
+_start_cleanup()
 
 # 1. Login through the firewall, and the cookie flags it sets
 for email in ('student@margin.test', 'lecturer@margin.test'):

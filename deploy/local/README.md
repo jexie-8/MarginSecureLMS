@@ -51,6 +51,8 @@ All in `../../docs/security-testing/` (results and the vulnerability log are the
 | Full OWASP WSTG run | `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d app`, then `python ../../docs/security-testing/run_wstg.py` |
 | Backend regression suite | in `backend/`: `php artisan test -c phpunit.margin.xml` |
 
+Both test scripts remove what they create (announcements with attack payloads, submissions and their files, grades, a course material, test accounts) when they finish, so the demo stays clean: `cleanup.py` notes the database time when a run starts and deletes rows created after it. The audit log is kept. Run the tests when nobody else is using the demo, because anything created during the run is removed too. Add `--keep-data` to keep a run's data for inspection, and remove it later with `python ../../docs/security-testing/cleanup.py --since "<time>"` (`--dry-run` shows what would go). The WSTG run needs `./start.ps1 -LocalOnly` first (sessions are only accepted from the configured host); run `./start.ps1` afterwards to go back to the tunnel, then `docker compose restart waf`. Switching modes can make the quick tunnel restart with a new address, so check the address it prints and rebuild the APK if it changed.
+
 The test override publishes the app alone on `127.0.0.1:8089` so the tests can show that the application defends itself without the firewall. Never use it for a public run. `./start.ps1` recreates the app without it.
 
 ## Mobile app (release APK)
@@ -63,11 +65,11 @@ If the app says "You appear to be offline" while the network works, the quick tu
 
 **Building in Docker (when Windows blocks the build).** On a PC with Smart App Control, `flutter build apk --release` fails with "An Application Control policy has blocked this file" (`gen_snapshot.exe`). Do not turn Smart App Control off. Build in a Linux container instead, with Docker Desktop running and the tunnel up:
 1. In `frontend/`: `./scripts/build_android.ps1 -Docker`.
-2. The first run builds the image `margin-flutter-android:3.44.7` (`frontend/scripts/android-build.Dockerfile`: the cirruslabs Flutter 3.44.0 image with its SDK moved to 3.44.7, the version used on the PC) and downloads Gradle and packages. That takes a while and several GB. Later runs reuse the image and the `margin-gradle-cache` and `margin-pub-cache` volumes.
+2. The first run builds the image `margin-flutter-android:3.44.7` (`frontend/scripts/android-build.Dockerfile`: the cirruslabs Flutter 3.44.0 image with its SDK moved to 3.44.7, the version used on the PC) and downloads Gradle and packages. That takes a while and several GB. Later runs reuse the image and the `margin-gradle-cache` and `margin-pub-cache` volumes, plus `margin-android-ndk`, `margin-android-cmake` and `margin-android-platforms` for the NDK (about 1 GB), CMake and SDK platforms that Gradle installs on the first build.
 3. The container builds from a copy of `frontend/` (your `.dart_tool` and `local.properties` stay untouched), then checks the signature: it prints `SIGNING OK` only when the APK's certificate matches the keystore in `key.properties`, and fails otherwise.
 4. The APK lands in `frontend/build/app/outputs/flutter-apk/app-release.apk`, and the symbols for reading obfuscated stack traces land in `frontend/build/debug-info/`. Keep the symbols with the APK.
 
-To free the space afterwards: `docker image rm margin-flutter-android:3.44.7 ghcr.io/cirruslabs/flutter:3.44.0` and `docker volume rm margin-gradle-cache margin-pub-cache`.
+To free the space afterwards: `docker image rm margin-flutter-android:3.44.7 ghcr.io/cirruslabs/flutter:3.44.0` and `docker volume rm margin-gradle-cache margin-pub-cache margin-android-ndk margin-android-cmake margin-android-platforms`.
 
 Release signing: put `upload-keystore.jks` and `key.properties` (`storePassword`, `keyPassword`, `keyAlias`, and `storeFile=../upload-keystore.jks`, a path relative to `android/app`) in `frontend/android/`. Both are git-ignored. Without them, the APK is signed with the debug key (fine for testing only).
 
